@@ -5,6 +5,8 @@ import { type Stage } from "@/sanity/schemas/stages";
 import { StageMixBar } from "@/components/stage-mix-bar";
 import { InitialsChip } from "@/components/initials-chip";
 import { FilterChips, FilterSelect } from "@/components/filter-chips";
+import { JobsGantt } from "@/components/jobs-gantt";
+import { ViewToggle } from "@/components/view-toggle";
 import { PageHeader } from "@/components/shell/panels";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -41,12 +43,17 @@ function isStale(application: { stage: Stage; stageUpdatedAt: string }) {
 export default async function JobsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string | string[]; company?: string | string[] }>;
+  searchParams: Promise<{
+    status?: string | string[];
+    company?: string | string[];
+    view?: string | string[];
+  }>;
 }) {
   const { orgId } = await requireOrg();
   const params = await searchParams;
   const status = (Array.isArray(params.status) ? params.status[0] : params.status) ?? "";
   const company = (Array.isArray(params.company) ? params.company[0] : params.company) ?? "";
+  const view = (Array.isArray(params.view) ? params.view[0] : params.view) ?? "grid";
 
   const allJobs = await readClient.fetch<JobCard[]>(JOBS_QUERY, { orgId });
 
@@ -97,6 +104,13 @@ export default async function JobsPage({
           ]}
         />
         <div className="flex items-center gap-2">
+          <ViewToggle
+            defaultValue="grid"
+            options={[
+              { value: "grid", label: "Grid view", icon: "grid" },
+              { value: "timeline", label: "Timeline view", icon: "timeline" },
+            ]}
+          />
           <FilterSelect
             param="company"
             options={companyOptions}
@@ -121,6 +135,8 @@ export default async function JobsPage({
             Add job
           </Button>
         </div>
+      ) : view === "timeline" ? (
+        <JobsGantt jobs={jobs} />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {jobs.map((job) => {

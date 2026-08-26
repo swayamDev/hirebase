@@ -32,7 +32,7 @@ export type CommandEntities = {
 };
 
 const NAV = [
-  { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Today", icon: LayoutDashboard },
   { href: "/dashboard/companies", label: "Companies", icon: Building2 },
   { href: "/dashboard/jobs", label: "Jobs", icon: Briefcase },
   { href: "/dashboard/candidates", label: "Candidates", icon: Users },

@@ -9,12 +9,16 @@ const HUES = [
   "bg-rose-100 text-rose-800",
 ] as const;
 
-function hueFor(name: string): (typeof HUES)[number] {
+export function hueIndexFor(name: string): number {
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = (hash * 31 + name.charCodeAt(i)) | 0;
   }
-  return HUES[Math.abs(hash) % HUES.length];
+  return Math.abs(hash) % HUES.length;
+}
+
+function hueFor(name: string): (typeof HUES)[number] {
+  return HUES[hueIndexFor(name)];
 }
 
 /** Deterministic initials avatar - identity at a glance in lists and boards. */

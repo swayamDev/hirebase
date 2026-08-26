@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
-function useParamNavigate() {
+export function useParamNavigate() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();

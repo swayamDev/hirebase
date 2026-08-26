@@ -1,344 +1,637 @@
 import Link from "next/link";
+import { Sparkles } from "lucide-react";
 import { requireOrg } from "@/lib/tenant";
 import { readClient } from "@/lib/sanity/client";
-import { PageHeader, Section } from "@/components/shell/panels";
-import { StagePill, StageRail } from "@/components/stage-rail";
-import { StageMixBar } from "@/components/stage-mix-bar";
+import { PageHeader } from "@/components/shell/panels";
+import { STAGE_BG } from "@/components/stage-rail";
 import { InitialsChip } from "@/components/initials-chip";
+import {
+  TodayQueue,
+  type PeekData,
+  type QueueGroup,
+  type QueueItem,
+} from "@/components/today/today-queue";
+import { AskChip } from "@/components/today/ask-hirebase";
 import { Button } from "@/components/ui/button";
 import { type Stage } from "@/sanity/schemas/stages";
+import { cn } from "@/lib/utils";
 
-type RecentApplication = {
+const DAY = 86_400_000;
+
+type AppRow = {
   _id: string;
   stage: Stage;
   stageUpdatedAt: string | null;
   appliedAt: string | null;
   candidateId: string | null;
   candidateName: string | null;
+  candidateSource: string | null;
   jobId: string | null;
   jobTitle: string | null;
+  companyName: string | null;
 };
 
-type StaleApplication = {
+type InterviewRow = {
+  roundName: string;
+  scheduledAt: string;
+  outcome: "pending" | "pass" | "fail";
+  feedbackText: string | null;
+  appId: string;
+};
+
+type OpenJobRow = {
   _id: string;
-  stage: Stage;
-  stageUpdatedAt: string | null;
-  appliedAt: string | null;
-  candidateId: string | null;
-  candidateName: string | null;
-  jobId: string | null;
-  jobTitle: string | null;
+  title: string;
+  createdAt: string;
+  companyName: string | null;
+  total: number;
+  past: number;
 };
 
-/** The stages an in-flight application can sit in - the desk's live pipeline. */
-const IN_FLIGHT_STAGES = [
-  "applied",
-  "screening",
-  "interviewing",
-  "offer",
-] as const satisfies readonly Stage[];
+const SOURCE_LABELS: Record<string, string> = {
+  referral: "Referral",
+  linkedin: "LinkedIn",
+  "job-board": "Job board",
+  outreach: "Outreach",
+  other: "Other",
+};
 
-type StageCounts = Record<(typeof IN_FLIGHT_STAGES)[number], number>;
-
-/** "3d ago"-style relative time from an ISO string. */
-function timeAgo(iso: string | null): string {
-  if (!iso) return "";
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const minutes = Math.floor(diffMs / 60_000);
-  if (minutes < 1) return "just now";
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
-  const months = Math.floor(days / 30);
-  return `${months}mo ago`;
-}
-
-/** Whole days since an ISO string - how long an application has sat still. */
-function daysStale(iso: string | null): number {
+function daysSince(iso: string | null): number {
   if (!iso) return 0;
-  return Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000));
+  return Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / DAY));
 }
 
-export default async function OverviewPage() {
+function isToday(iso: string): boolean {
+  return new Date(iso).toDateString() === new Date().toDateString();
+}
+
+function timeLabel(iso: string): string {
+  return new Date(iso)
+    .toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
+    .replace(":00", "")
+    .replace(" ", "")
+    .toLowerCase();
+}
+
+function shortDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", {
+    day: "numeric",
+    month: "short",
+  });
+}
+
+export default async function TodayPage() {
   const { orgId, has } = await requireOrg();
+  const aiAllowed = has({ feature: "ai_agent" });
 
-  const now = new Date().toISOString();
-  const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-  const staleBefore = new Date(
-    Date.now() - 14 * 24 * 60 * 60 * 1000,
-  ).toISOString();
-
-  const [
-    openJobs,
-    activeCandidates,
-    applicationsInProgress,
-    recentInterviews,
-    companyCount,
-    stageCounts,
-    recentApplications,
-    staleApplications,
-  ] = await Promise.all([
-    readClient.fetch<number>(
-      `count(*[_type == "job" && orgId == $orgId && status == "open"])`,
-      { orgId },
-    ),
-    readClient.fetch<number>(
-      `count(*[_type == "candidate" && orgId == $orgId && archived != true])`,
-      { orgId },
-    ),
-    readClient.fetch<number>(
-      `count(*[_type == "application" && orgId == $orgId && !(stage in ["hired", "rejected"])])`,
-      { orgId },
-    ),
-    readClient.fetch<number>(
-      `count(*[_type == "interview" && orgId == $orgId && scheduledAt >= $since && scheduledAt <= $now])`,
-      { orgId, since, now },
-    ),
-    readClient.fetch<number>(
-      `count(*[_type == "company" && orgId == $orgId])`,
-      { orgId },
-    ),
-    readClient.fetch<StageCounts>(
-      `{
-        "applied": count(*[_type == "application" && orgId == $orgId && stage == "applied"]),
-        "screening": count(*[_type == "application" && orgId == $orgId && stage == "screening"]),
-        "interviewing": count(*[_type == "application" && orgId == $orgId && stage == "interviewing"]),
-        "offer": count(*[_type == "application" && orgId == $orgId && stage == "offer"])
+  const [apps, interviews, openJobs] = await Promise.all([
+    readClient.fetch<AppRow[]>(
+      `*[_type == "application" && orgId == $orgId]{
+        _id, stage, stageUpdatedAt, appliedAt,
+        "candidateId": candidate->_id,
+        "candidateName": candidate->name,
+        "candidateSource": candidate->source,
+        "jobId": job->_id,
+        "jobTitle": job->title,
+        "companyName": job->company->name
       }`,
       { orgId },
     ),
-    readClient.fetch<RecentApplication[]>(
-      `*[_type == "application" && orgId == $orgId]
-        | order(coalesce(stageUpdatedAt, appliedAt) desc)[0...8]{
-          _id,
-          stage,
-          stageUpdatedAt,
-          appliedAt,
-          "candidateId": candidate->_id,
-          "candidateName": candidate->name,
-          "jobId": job->_id,
-          "jobTitle": job->title
-        }`,
+    readClient.fetch<InterviewRow[]>(
+      `*[_type == "interview" && orgId == $orgId]{
+        roundName, scheduledAt, outcome, feedbackText,
+        "appId": application._ref
+      }`,
       { orgId },
     ),
-    readClient.fetch<StaleApplication[]>(
-      `*[_type == "application" && orgId == $orgId
-          && !(stage in ["hired", "rejected"])
-          && coalesce(stageUpdatedAt, appliedAt) < $staleBefore]
-        | order(coalesce(stageUpdatedAt, appliedAt) asc)[0...8]{
-          _id,
-          stage,
-          stageUpdatedAt,
-          appliedAt,
-          "candidateId": candidate->_id,
-          "candidateName": candidate->name,
-          "jobId": job->_id,
-          "jobTitle": job->title
-        }`,
-      { orgId, staleBefore },
+    readClient.fetch<OpenJobRow[]>(
+      `*[_type == "job" && orgId == $orgId && status == "open"]{
+        _id, title, createdAt,
+        "companyName": company->name,
+        "total": count(*[_type == "application" && orgId == $orgId && job._ref == ^._id]),
+        "past": count(*[_type == "application" && orgId == $orgId && job._ref == ^._id && stage in ["interviewing", "offer", "hired"]])
+      }`,
+      { orgId },
     ),
   ]);
 
-  const isBrandNew = companyCount === 0 && recentApplications.length === 0;
-  const showUpgrade = !has({ feature: "ai_agent" });
+  const interviewsByApp = new Map<string, InterviewRow[]>();
+  for (const interview of interviews) {
+    const list = interviewsByApp.get(interview.appId) ?? [];
+    list.push(interview);
+    interviewsByApp.set(interview.appId, list);
+  }
+  for (const list of interviewsByApp.values()) {
+    list.sort(
+      (a, b) =>
+        new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime(),
+    );
+  }
 
-  const stats = [
-    { label: "Open jobs", value: openJobs },
-    { label: "Active candidates", value: activeCandidates },
-    { label: "Applications in progress", value: applicationsInProgress },
-    { label: "Interviews · last 7 days", value: recentInterviews },
+  function peekFor(app: AppRow, title: string | null, body: string | null): PeekData {
+    const ivs = interviewsByApp.get(app._id) ?? [];
+    return {
+      candidateId: app.candidateId ?? "",
+      name: app.candidateName ?? "Unknown candidate",
+      stage: app.stage,
+      daysInStage: daysSince(app.stageUpdatedAt ?? app.appliedAt),
+      role: app.jobTitle ?? "Untitled role",
+      client: app.companyName ?? "-",
+      daysInPipeline: daysSince(app.appliedAt ?? app.stageUpdatedAt),
+      source: app.candidateSource
+        ? (SOURCE_LABELS[app.candidateSource] ?? app.candidateSource)
+        : null,
+      blockedTitle: title,
+      blockedBody: body,
+      interviews: ivs.slice(0, 4).map((iv) => ({
+        roundName: iv.roundName,
+        outcome: iv.outcome,
+        date: shortDate(iv.scheduledAt),
+        feedback: iv.feedbackText,
+      })),
+    };
+  }
+
+  const overdue: QueueItem[] = [];
+  const dueToday: QueueItem[] = [];
+  const waiting: QueueItem[] = [];
+  let unreadCvRows = 0;
+
+  const live = apps.filter(
+    (app) => app.stage !== "hired" && app.stage !== "rejected",
+  );
+
+  for (const app of apps) {
+    const d = daysSince(app.stageUpdatedAt ?? app.appliedAt);
+    const name = app.candidateName ?? "Unknown candidate";
+    const sub = `${app.jobTitle ?? "Untitled role"} · ${app.companyName ?? "-"}`;
+    const href = app.candidateId
+      ? `/dashboard/candidates/${app.candidateId}`
+      : "/dashboard/candidates";
+    const ivs = interviewsByApp.get(app._id) ?? [];
+    const lastDone = ivs.find((iv) => new Date(iv.scheduledAt) <= new Date());
+    const todayIv = ivs.find((iv) => isToday(iv.scheduledAt));
+    const futureIv = ivs.find(
+      (iv) => new Date(iv.scheduledAt) > new Date() && !isToday(iv.scheduledAt),
+    );
+    const debriefMissing =
+      lastDone &&
+      lastDone.outcome === "pending" &&
+      !lastDone.feedbackText &&
+      daysSince(lastDone.scheduledAt) >= 2;
+
+    const base = { kind: "application" as const, name, sub, stage: app.stage, href };
+
+    if (app.stage === "offer" && d >= 5) {
+      const reason = `Offer out ${d} days with no decision logged.`;
+      overdue.push({
+        ...base,
+        id: app._id,
+        reason,
+        actionLabel: "Chase offer",
+        ageLabel: `${d}d`,
+        ageTone: "danger",
+        peek: peekFor(app, `Blocked ${d} days`, `${reason} The client is waiting on an answer before the role can close.`),
+      });
+    } else if (app.stage === "interviewing" && debriefMissing) {
+      const dd = daysSince(lastDone.scheduledAt);
+      const reason = `${lastDone.roundName} ran ${dd} day${dd === 1 ? "" : "s"} ago - no debrief on file.`;
+      overdue.push({
+        ...base,
+        id: app._id,
+        reason,
+        actionLabel: "Log debrief",
+        ageLabel: `${dd}d`,
+        ageTone: "danger",
+        peek: peekFor(app, `Blocked ${dd} days`, `${reason} The client can't decide until the feedback lands.`),
+      });
+    } else if (app.stage === "screening" && d > 14) {
+      const reason = `${d} days in screening - decide or release.`;
+      overdue.push({
+        ...base,
+        id: app._id,
+        reason,
+        actionLabel: "Review",
+        ageLabel: `${d}d`,
+        ageTone: "danger",
+        peek: peekFor(app, `Blocked ${d} days`, `${reason}`),
+      });
+    } else if (todayIv) {
+      const reason = `${todayIv.roundName} today at ${timeLabel(todayIv.scheduledAt)}.`;
+      dueToday.push({
+        ...base,
+        id: app._id,
+        reason,
+        actionLabel: "Prep brief",
+        ageLabel: timeLabel(todayIv.scheduledAt),
+        ageTone: "muted",
+        peek: peekFor(app, "Due today", reason),
+      });
+    } else if (app.stage === "applied" && d <= 7 && unreadCvRows < 4) {
+      unreadCvRows++;
+      const reason = `Applied ${d === 0 ? "today" : d === 1 ? "yesterday" : `${d} days ago`} - CV on file, unread.`;
+      dueToday.push({
+        ...base,
+        id: app._id,
+        reason,
+        actionLabel: "Screen CV",
+        ageLabel: `${d}d`,
+        ageTone: "muted",
+        peek: peekFor(app, "Due today", reason),
+      });
+    } else if (app.stage === "offer") {
+      waiting.push({
+        ...base,
+        id: app._id,
+        reason: "Offer out - candidate deciding.",
+        actionLabel: "",
+        ageLabel: `${d}d`,
+        ageTone: "muted",
+        peek: peekFor(app, null, null),
+      });
+    } else if (app.stage === "interviewing" && futureIv) {
+      waiting.push({
+        ...base,
+        id: app._id,
+        reason: `${futureIv.roundName} scheduled for ${shortDate(futureIv.scheduledAt)}.`,
+        actionLabel: "",
+        ageLabel: `${d}d`,
+        ageTone: "muted",
+        peek: peekFor(app, null, null),
+      });
+    } else if (app.stage === "hired" && d <= 10) {
+      waiting.push({
+        ...base,
+        id: app._id,
+        reason: "Placed - confirming start date.",
+        actionLabel: "",
+        ageLabel: `${d}d`,
+        ageTone: "muted",
+        peek: peekFor(app, null, null),
+      });
+    } else if (app.stage === "screening" && d >= 3) {
+      waiting.push({
+        ...base,
+        id: app._id,
+        reason: "With the client for review.",
+        actionLabel: "",
+        ageLabel: `${d}d`,
+        ageTone: "muted",
+        peek: peekFor(app, null, null),
+      });
+    }
+  }
+
+  // Roles that aren't converting: open >14d with nobody past screening.
+  for (const job of openJobs) {
+    const age = daysSince(job.createdAt);
+    if (age > 14 && job.total > 0 && job.past === 0) {
+      overdue.push({
+        id: job._id,
+        kind: "job",
+        name: job.title,
+        sub: job.companyName ?? "-",
+        stage: null,
+        reason: `Opened ${age} days ago - nobody past screening yet.`,
+        actionLabel: "Open role",
+        href: `/dashboard/jobs/${job._id}`,
+        ageLabel: `${age}d`,
+        ageTone: "danger",
+        peek: null,
+      });
+    }
+  }
+
+  // The one violet row: sourcing help for the thinnest open role.
+  const thinJob = [...openJobs].sort((a, b) => a.total - b.total)[0];
+  if (aiAllowed && thinJob && thinJob.total < 4) {
+    dueToday.push({
+      id: `ai-${thinJob._id}`,
+      kind: "ai",
+      name: thinJob.title,
+      sub: thinJob.companyName ?? "-",
+      stage: null,
+      reason: "Ask Hirebase to shortlist matches for this brief from your existing pool.",
+      actionLabel: "Review matches",
+      href: `/dashboard/jobs/${thinJob._id}`,
+      ageLabel: "",
+      ageTone: "muted",
+      ask: `Who are the strongest matches for ${thinJob.title}?`,
+      peek: null,
+    });
+  }
+
+  overdue.sort((a, b) => parseInt(b.ageLabel) - parseInt(a.ageLabel) || 0);
+  const waitingShown = waiting.slice(0, 6);
+
+  const groups: QueueGroup[] = [
+    {
+      key: "overdue",
+      label: "Overdue",
+      hint: "Client is waiting on you",
+      dotClass: "bg-rose-600",
+      count: overdue.length,
+      muted: false,
+      items: overdue,
+    },
+    {
+      key: "today",
+      label: "Due today",
+      hint: null,
+      dotClass: "bg-foreground/60",
+      count: dueToday.length,
+      muted: false,
+      items: dueToday,
+    },
+    {
+      key: "waiting",
+      label: "Waiting on someone else",
+      hint: "Nothing for you to do yet",
+      dotClass: "bg-muted-foreground/40",
+      count: waiting.length,
+      muted: true,
+      items: waitingShown,
+    },
+  ].filter((group) => group.items.length > 0);
+
+  const needAction = overdue.length + dueToday.length;
+
+  // ── Right rail metrics ──
+  const stageCount = (stage: Stage) =>
+    apps.filter((app) => app.stage === stage).length;
+  const counts = {
+    applied: stageCount("applied"),
+    screening: stageCount("screening"),
+    interviewing: stageCount("interviewing"),
+    offer: stageCount("offer"),
+  };
+  const maxCount = Math.max(1, ...Object.values(counts));
+  const hired = stageCount("hired");
+  const pastScreening = counts.interviewing + counts.offer + hired;
+  const screenConv = counts.screening + pastScreening > 0
+    ? Math.round((pastScreening / (counts.screening + pastScreening)) * 100)
+    : 0;
+  const offerConv = counts.interviewing + counts.offer + hired > 0
+    ? Math.round(((counts.offer + hired) / (counts.interviewing + counts.offer + hired)) * 100)
+    : 0;
+
+  const weekMoves = apps.filter(
+    (app) => app.stageUpdatedAt && daysSince(app.stageUpdatedAt) < 7,
+  ).length;
+  const weekDebriefs = interviews.filter(
+    (iv) =>
+      iv.feedbackText &&
+      daysSince(iv.scheduledAt) < 7 &&
+      new Date(iv.scheduledAt) <= new Date(),
+  ).length;
+  const wentStale = live.filter((app) => {
+    const d = daysSince(app.stageUpdatedAt ?? app.appliedAt);
+    return d > 14 && d <= 21;
+  }).length;
+
+  const lastTouchByClient = new Map<string, number>();
+  for (const app of apps) {
+    if (!app.companyName) continue;
+    const d = daysSince(app.stageUpdatedAt ?? app.appliedAt);
+    const current = lastTouchByClient.get(app.companyName);
+    if (current === undefined || d < current) {
+      lastTouchByClient.set(app.companyName, d);
+    }
+  }
+  const clientsToUpdate = [...lastTouchByClient.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3);
+
+  const railStages = [
+    { key: "applied" as const, label: "Applied" },
+    { key: "screening" as const, label: "Screening" },
+    { key: "interviewing" as const, label: "Interviewing" },
+    { key: "offer" as const, label: "Offer" },
   ];
 
   return (
     <div className="flex flex-col pb-4">
       <PageHeader
-        eyebrow="Your desk"
-        title="Overview"
-        description="Every client, role and candidate - at a glance."
+        title="Today"
+        description={
+          needAction > 0
+            ? `${needAction} thing${needAction === 1 ? "" : "s"} need${needAction === 1 ? "s" : ""} you - in the order they'll hurt.`
+            : "Your queue, in the order it will hurt if ignored."
+        }
+        actions={
+          <div className="flex items-center gap-2.5">
+            <span className="text-muted-foreground font-mono text-xs tabular-nums whitespace-nowrap">
+              {needAction} to clear · {waiting.length} waiting
+            </span>
+            <span className="bg-muted flex h-1 w-16 overflow-hidden rounded-full">
+              <span
+                className="bg-foreground/70"
+                style={{
+                  width: `${Math.round((waiting.length / Math.max(1, needAction + waiting.length)) * 100)}%`,
+                }}
+              />
+            </span>
+          </div>
+        }
       />
 
-      {/* ── Stat strip: one inline row, hairline-divided ── */}
-      <div className="mt-4 flex divide-x overflow-x-auto border-y">
-        {stats.map((stat) => (
-          <div key={stat.label} className="min-w-0 flex-1 px-4 py-3 first:pl-0">
-            <p className="text-muted-foreground truncate text-xs font-medium">
-              {stat.label}
+      <div className="mt-3 grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1fr)_296px] xl:gap-0">
+        {/* ── The queue ── */}
+        <div className="min-w-0 xl:pr-6">
+          {needAction === 0 ? (
+            <div className="border-t px-1 py-14">
+              <p className="text-[15px] font-semibold">Nothing is overdue.</p>
+              <p className="text-muted-foreground mt-2 max-w-md text-[13px] leading-relaxed">
+                {waiting.length > 0
+                  ? `${waiting.length} thing${waiting.length === 1 ? " is" : "s are"} with clients or candidates. The queue refills as work ages - so the honest next move is putting more people in.`
+                  : "The queue refills as work ages - so the honest next move is putting more people in."}
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  nativeButton={false}
+                  render={<Link href="/dashboard/candidates/new" />}
+                >
+                  Add a candidate
+                </Button>
+                {aiAllowed && thinJob ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-ai/35 text-ai hover:text-ai"
+                    nativeButton={false}
+                    render={<Link href={`/dashboard/jobs/${thinJob._id}`} />}
+                  >
+                    <Sparkles className="size-3.5" />
+                    Source for an open role
+                  </Button>
+                ) : null}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  nativeButton={false}
+                  render={<Link href="/dashboard/jobs" />}
+                >
+                  Open the roles
+                </Button>
+              </div>
+              {groups.length > 0 ? (
+                <div className="mt-10">
+                  <TodayQueue groups={groups} aiAllowed={aiAllowed} />
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <TodayQueue groups={groups} aiAllowed={aiAllowed} />
+          )}
+        </div>
+
+        {/* ── Right rail: the desk's vitals ── */}
+        <aside className="xl:border-l xl:pl-6">
+          <div className="border-b pb-5">
+            <p className="text-muted-foreground font-mono text-[10px] tracking-[0.14em] uppercase">
+              Pipeline
             </p>
-            <p className="mt-1 text-xl font-semibold tabular-nums">
-              {stat.value}
-            </p>
+            <div className="mt-3 flex flex-col gap-2.5">
+              {railStages.map((stage) => (
+                <div key={stage.key} className="flex items-center gap-2.5">
+                  <span className="text-muted-foreground w-[74px] shrink-0 text-xs">
+                    {stage.label}
+                  </span>
+                  <span className="bg-muted flex h-1.5 flex-1 overflow-hidden rounded-full">
+                    <span
+                      className={cn("rounded-full", STAGE_BG[stage.key])}
+                      style={{
+                        width: `${Math.round((counts[stage.key] / maxCount) * 100)}%`,
+                      }}
+                    />
+                  </span>
+                  <span className="w-5 shrink-0 text-right font-mono text-xs tabular-nums">
+                    {counts[stage.key]}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 flex flex-col gap-1.5 border-t border-dashed pt-3">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground text-xs">
+                  Screen → interview
+                </span>
+                <span className="font-mono text-xs tabular-nums">
+                  {screenConv}%
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground text-xs">
+                  Interview → offer
+                </span>
+                <span className="font-mono text-xs tabular-nums">
+                  {offerConv}%
+                </span>
+              </div>
+            </div>
           </div>
-        ))}
-      </div>
 
-      {/* ── Pipeline health: flat beneath the strip ── */}
-      <Section
-        title="Pipeline health"
-        count={applicationsInProgress}
-        className="mt-8"
-      >
-        <StageMixBar counts={stageCounts} className="h-2.5" />
-        <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
-          {IN_FLIGHT_STAGES.map((stage) => (
-            <li key={stage} className="flex items-center gap-1.5">
-              <StagePill stage={stage} />
-              <span className="text-muted-foreground font-mono text-xs tabular-nums">
-                {stageCounts[stage]}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </Section>
-
-      {/* ── Recent activity | Needs attention: one vertical divider ── */}
-      <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-0">
-        <Section title="Recent activity" className="lg:pr-6">
-          {isBrandNew ? (
-            <div className="flex flex-col items-center gap-2.5 border-t px-6 py-8 text-center">
-              <p className="text-muted-foreground text-[13px]">
-                No companies yet &mdash; add your first client.
-              </p>
-              <Button
-                size="sm"
-                nativeButton={false}
-                render={<Link href="/dashboard/companies" />}
-              >
-                Add company
-              </Button>
-            </div>
-          ) : recentApplications.length === 0 ? (
-            <div className="flex flex-col items-center gap-2.5 border-t px-6 py-8 text-center">
-              <p className="text-muted-foreground text-[13px]">
-                No applications yet &mdash; add candidates to a job to see
-                activity here.
-              </p>
-              <Button
-                size="sm"
-                variant="outline"
-                nativeButton={false}
-                render={<Link href="/dashboard/jobs" />}
-              >
-                View jobs
-              </Button>
-            </div>
-          ) : (
-            <div className="divide-y border-t">
-              {recentApplications.map((app) => {
-                const name = app.candidateName ?? "Unknown candidate";
-                return (
-                  <div
-                    key={app._id}
-                    className="hover:bg-muted/40 relative flex cursor-pointer items-center gap-3 py-2.5 text-[13px] transition-colors"
-                  >
-                    <InitialsChip name={name} />
-                    <div className="min-w-0 flex-1">
-                      {app.candidateId ? (
-                        <Link
-                          href={`/dashboard/candidates/${app.candidateId}`}
-                          className="block truncate font-medium hover:underline after:absolute after:inset-0"
-                        >
-                          {name}
-                        </Link>
-                      ) : (
-                        <p className="truncate font-medium">{name}</p>
-                      )}
-                      <p className="text-muted-foreground truncate">
-                        {app.jobTitle ?? "Untitled job"}
-                      </p>
-                    </div>
-                    <StageRail stage={app.stage} className="shrink-0" />
-                    <span className="text-muted-foreground w-14 shrink-0 text-right font-mono text-xs tabular-nums">
-                      {timeAgo(app.stageUpdatedAt ?? app.appliedAt)}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </Section>
-
-        <Section
-          title="Needs attention"
-          count={staleApplications.length}
-          className="lg:border-l lg:pl-6"
-        >
-          {staleApplications.length === 0 ? (
-            <p className="text-muted-foreground border-t px-6 py-8 text-center text-[13px]">
-              Nothing is stale &mdash; the pipeline is moving.
+          <div className="border-b py-5">
+            <p className="text-muted-foreground font-mono text-[10px] tracking-[0.14em] uppercase">
+              Last 7 days
             </p>
-          ) : (
-            <div className="divide-y border-t">
-              {staleApplications.map((app) => {
-                const name = app.candidateName ?? "Unknown candidate";
-                const days = daysStale(app.stageUpdatedAt ?? app.appliedAt);
-                return (
-                  <div
-                    key={app._id}
-                    className="hover:bg-muted/40 relative flex cursor-pointer items-center gap-3 py-2.5 text-[13px] transition-colors"
+            <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-3.5">
+              {[
+                { value: weekMoves, label: "stage moves" },
+                { value: weekDebriefs, label: "debriefs logged" },
+                { value: counts.offer, label: "offers out" },
+                { value: wentStale, label: "went stale", warn: wentStale > 0 },
+              ].map((stat) => (
+                <div key={stat.label}>
+                  <p
+                    className={cn(
+                      "font-mono text-lg font-medium tabular-nums",
+                      stat.warn && "text-stage-offer",
+                    )}
                   >
-                    <InitialsChip name={name} />
-                    <div className="min-w-0 flex-1">
-                      {app.candidateId ? (
-                        <Link
-                          href={`/dashboard/candidates/${app.candidateId}`}
-                          className="block truncate font-medium hover:underline after:absolute after:inset-0"
-                        >
-                          {name}
-                        </Link>
-                      ) : (
-                        <p className="truncate font-medium">{name}</p>
+                    {stat.value}
+                  </p>
+                  <p className="text-muted-foreground text-[11.5px]">
+                    {stat.label}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {clientsToUpdate.length > 0 ? (
+            <div className="border-b py-5">
+              <p className="text-muted-foreground font-mono text-[10px] tracking-[0.14em] uppercase">
+                Clients to update
+              </p>
+              <div className="mt-2.5 flex flex-col gap-2">
+                {clientsToUpdate.map(([client, d]) => (
+                  <div key={client} className="flex items-center gap-2">
+                    <InitialsChip name={client} size="sm" />
+                    <span className="min-w-0 flex-1 truncate text-[12.5px]">
+                      {client}
+                    </span>
+                    <span
+                      className={cn(
+                        "font-mono text-[11px] tabular-nums",
+                        d > 10
+                          ? "text-rose-700"
+                          : d > 6
+                            ? "text-stage-offer"
+                            : "text-muted-foreground",
                       )}
-                      <p className="text-muted-foreground truncate">
-                        {app.jobTitle ?? "Untitled job"}
-                      </p>
-                    </div>
-                    <span className="text-stage-offer shrink-0 font-mono text-xs tabular-nums">
-                      {days}d stale
+                    >
+                      {d}d
                     </span>
                   </div>
-                );
-              })}
+                ))}
+              </div>
+              {aiAllowed ? (
+                <AskChip
+                  prompt={`Summarize this week's activity for ${clientsToUpdate[0][0]}`}
+                  className="mt-3"
+                />
+              ) : null}
             </div>
-          )}
-        </Section>
-      </div>
+          ) : null}
 
-      {/* ── AI: the one allowed box - quiet violet-border card ── */}
-      {showUpgrade ? (
-        <div className="border-ai/30 mt-10 flex flex-col items-start gap-3 rounded-lg border p-5">
-          <span className="bg-ai-soft text-ai inline-block rounded-md px-2 py-0.5 text-xs font-semibold">
-            AI · Pro
-          </span>
-          <p className="text-sm">
-            <span className="font-semibold">Meet the AI Talent Agent</span>
-            <span className="text-muted-foreground">
-              {" "}
-              &mdash; ask questions across every CV and debrief your agency
-              has ever logged.
-            </span>
-          </p>
-          <Button
-            size="sm"
-            nativeButton={false}
-            render={<Link href="/dashboard/billing" />}
-          >
-            View plans
-          </Button>
-        </div>
-      ) : (
-        <div className="border-ai/30 mt-10 rounded-lg border p-5">
-          <h2 className="text-[13px] font-semibold">Ask Hirebase</h2>
-          <p className="mt-2 text-sm">
-            Your agent is live &mdash; ask it anything from the dock.
-          </p>
-          <ul className="text-muted-foreground mt-3 space-y-2 text-sm">
-            <li>&ldquo;Who moved to offer this week?&rdquo;</li>
-            <li>&ldquo;Which candidates mention React in their CV?&rdquo;</li>
-          </ul>
-        </div>
-      )}
+          <div className="py-5">
+            <div className="border-ai/25 rounded-lg border p-3">
+              <p className="text-ai flex items-center gap-1.5 text-xs font-semibold">
+                <Sparkles className="size-3" />
+                Ask from anywhere
+              </p>
+              {aiAllowed ? (
+                <>
+                  <p className="text-muted-foreground mt-1.5 text-xs leading-relaxed">
+                    One box for questions and commands - these run for real:
+                  </p>
+                  <div className="mt-2.5 flex flex-col items-start gap-1.5">
+                    <AskChip prompt="Who gave strong system-design answers?" />
+                    <AskChip prompt="Which roles are going stale?" />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-muted-foreground mt-1.5 text-xs leading-relaxed">
+                    Ask questions across every CV and debrief your agency has
+                    logged - on Pro.
+                  </p>
+                  <Button
+                    size="sm"
+                    className="bg-ai text-ai-foreground hover:bg-ai/90 mt-2.5"
+                    nativeButton={false}
+                    render={<Link href="/dashboard/billing" />}
+                  >
+                    See plans
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        </aside>
+      </div>
     </div>
   );
 }

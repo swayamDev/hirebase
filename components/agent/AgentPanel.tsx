@@ -22,11 +22,66 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
-const STARTER_PROMPTS = [
-  "Who's stalled in screening?",
-  "Find React candidates with fintech experience",
-  "Who gave strong system-design answers recently?",
-];
+/**
+ * Suggestions follow the screen: list pages get portfolio questions, detail
+ * pages get questions about the entity on screen (its name read from the h1).
+ */
+function suggestionsFor(pathname: string, entity: string | null): string[] {
+  const detail = /^\/dashboard\/(companies|jobs|candidates)\/[^/]+/.exec(
+    pathname,
+  )?.[1];
+
+  if (detail === "companies") {
+    const name = entity ?? "this client";
+    return [
+      `Summarize the pipeline for ${name}`,
+      `Who's stalled in screening at ${name}?`,
+      `Which of ${name === "this client" ? "this client's" : `${name}'s`} roles still need candidates?`,
+    ];
+  }
+  if (detail === "jobs") {
+    const title = entity ?? "this role";
+    return [
+      `Who are the strongest matches for ${title}?`,
+      `Who's been stuck on ${title} for over two weeks?`,
+      `Summarize the interview feedback for ${title}`,
+    ];
+  }
+  if (detail === "candidates") {
+    const name = entity ?? "this candidate";
+    return [
+      `Summarize ${name}'s interview feedback`,
+      `Which open roles fit ${name} best?`,
+      `Where is ${name} in our pipelines right now?`,
+    ];
+  }
+  if (pathname.startsWith("/dashboard/companies")) {
+    return [
+      "Which client has the most candidates in play?",
+      "Which clients have open roles with no candidates yet?",
+      "Summarize this month's activity across my clients",
+    ];
+  }
+  if (pathname.startsWith("/dashboard/jobs")) {
+    return [
+      "Which roles are going stale?",
+      "Where are candidates getting stuck right now?",
+      "Which open roles have nobody past screening?",
+    ];
+  }
+  if (pathname.startsWith("/dashboard/candidates")) {
+    return [
+      "Find React candidates with fintech experience",
+      "Who joined the pool in the last two weeks?",
+      "Who gave strong system-design answers recently?",
+    ];
+  }
+  return [
+    "What moved in my pipeline this week?",
+    "Who's stalled in screening?",
+    "Which candidates are closest to an offer?",
+  ];
+}
 
 const markdownComponents: Components = {
   a: ({ href, children }) => (
@@ -86,7 +141,13 @@ function UpgradeCard() {
   );
 }
 
-function AgentChat() {
+function AgentChat({
+  ask,
+  onAskHandled,
+}: {
+  ask: string | null;
+  onAskHandled: () => void;
+}) {
   const [input, setInput] = useState("");
   const router = useRouter();
   const pathname = usePathname();
@@ -131,6 +192,37 @@ function AgentChat() {
   });
   const busy = status === "submitted" || status === "streaming";
 
+  // On detail pages the h1 is the entity name - it feeds the suggestions.
+  // The h1 can stream in just after navigation, so retry briefly.
+  const [entityName, setEntityName] = useState<string | null>(null);
+  useEffect(() => {
+    if (!/^\/dashboard\/(companies|jobs|candidates)\/[^/]+/.test(pathname)) {
+      setEntityName(null);
+      return;
+    }
+    // Poll briefly - the page body can stream in well after the layout hydrates.
+    let tries = 0;
+    const timer = setInterval(() => {
+      const text = document.querySelector("main h1")?.textContent?.trim();
+      if (text) {
+        setEntityName(text);
+        clearInterval(timer);
+      } else if (++tries >= 20) {
+        clearInterval(timer);
+      }
+    }, 300);
+    return () => clearInterval(timer);
+  }, [pathname]);
+  const suggestions = suggestionsFor(pathname, entityName);
+
+  // Questions fired from elsewhere in the app (queue rows, peek panel, rail).
+  useEffect(() => {
+    if (!ask || busy) return;
+    sendMessage({ text: ask });
+    onAskHandled();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ask, busy]);
+
   // Keep the newest message in view while the app stays usable behind us.
   const scrollRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -154,7 +246,7 @@ function AgentChat() {
             <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
               Try asking
             </p>
-            {STARTER_PROMPTS.map((prompt) => (
+            {suggestions.map((prompt) => (
               <Button
                 key={prompt}
                 variant="outline"
@@ -234,6 +326,19 @@ function AgentChat() {
 
 export function AgentPanel({ allowed }: { allowed: boolean }) {
   const [open, setOpen] = useState(false);
+  const [ask, setAsk] = useState<string | null>(null);
+
+  // Anywhere in the app can dispatch `hirebase:ask` to open the dock mid-flow.
+  useEffect(() => {
+    function onAsk(event: Event) {
+      const text = (event as CustomEvent<{ text?: string }>).detail?.text;
+      if (!text) return;
+      setOpen(true);
+      setAsk(text);
+    }
+    window.addEventListener("hirebase:ask", onAsk);
+    return () => window.removeEventListener("hirebase:ask", onAsk);
+  }, []);
 
   return (
     <>
@@ -241,7 +346,7 @@ export function AgentPanel({ allowed }: { allowed: boolean }) {
       <Button
         onClick={() => setOpen((current) => !current)}
         aria-expanded={open}
-        className="bg-ai text-ai-foreground hover:bg-ai/90 shadow-ai/40 fixed right-6 bottom-6 z-40 h-12 rounded-full px-5 shadow-lg transition-transform hover:scale-[1.03]"
+        className="bg-ai text-ai-foreground hover:bg-ai/90 shadow-ai/40 fixed right-6 bottom-6 z-[60] h-12 rounded-full px-5 shadow-lg transition-transform hover:scale-[1.03]"
       >
         <Sparkles className="size-4" />
         Ask Hirebase
@@ -260,7 +365,7 @@ export function AgentPanel({ allowed }: { allowed: boolean }) {
           if (e.key === "Escape") setOpen(false);
         }}
         className={cn(
-          "bg-card fixed right-4 bottom-24 z-40 flex h-[600px] max-h-[calc(100dvh-8rem)] w-[min(420px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border shadow-2xl transition-all duration-300 sm:right-6",
+          "bg-card fixed right-4 bottom-24 z-[60] flex h-[600px] max-h-[calc(100dvh-8rem)] w-[min(420px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border shadow-2xl transition-all duration-300 sm:right-6",
           open
             ? "translate-y-0 opacity-100"
             : "pointer-events-none translate-y-4 opacity-0",
@@ -284,7 +389,11 @@ export function AgentPanel({ allowed }: { allowed: boolean }) {
             <X className="size-4" />
           </Button>
         </div>
-        {allowed ? <AgentChat /> : <div className="py-4"><UpgradeCard /></div>}
+        {allowed ? (
+          <AgentChat ask={ask} onAskHandled={() => setAsk(null)} />
+        ) : (
+          <div className="py-4"><UpgradeCard /></div>
+        )}
       </div>
     </>
   );
