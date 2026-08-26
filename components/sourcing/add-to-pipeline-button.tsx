@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createApplication } from "@/lib/actions/applications";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 
 /**
  * Row action shared by the sourcing and add-candidate pages: adds the
@@ -44,6 +45,7 @@ export function AddToPipelineButton({
         <span className="text-destructive text-xs">Could not add</span>
       ) : null}
       <Button size="sm" variant="outline" onClick={handleAdd} disabled={pending}>
+        {pending ? <Spinner /> : null}
         {pending ? "Adding…" : "Add to pipeline"}
       </Button>
     </div>

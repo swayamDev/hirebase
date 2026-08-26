@@ -3,6 +3,7 @@
 import { useDraggable } from "@dnd-kit/core";
 import { type Stage } from "@/sanity/schemas/stages";
 import { InitialsChip } from "@/components/initials-chip";
+import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
 export type BoardApplication = {
@@ -23,9 +24,12 @@ function daysInStage(stageUpdatedAt: string): number {
 export function KanbanCardContent({
   application,
   dragging = false,
+  pending = false,
 }: {
   application: BoardApplication;
   dragging?: boolean;
+  /** The card's stage move is still committing on the server. */
+  pending?: boolean;
 }) {
   const days = daysInStage(application.stageUpdatedAt);
   const stale =
@@ -55,12 +59,19 @@ export function KanbanCardContent({
         </p>
       ) : null}
       <div className="mt-2.5 flex items-center justify-between gap-2">
-        <span
-          className="text-muted-foreground text-[11px] tabular-nums"
-          suppressHydrationWarning
-        >
-          {days === 0 ? "Moved today" : `${days}d in stage`}
-        </span>
+        {pending ? (
+          <span className="text-muted-foreground inline-flex items-center gap-1 text-[11px]">
+            <Spinner className="size-3" />
+            Moving…
+          </span>
+        ) : (
+          <span
+            className="text-muted-foreground text-[11px] tabular-nums"
+            suppressHydrationWarning
+          >
+            {days === 0 ? "Moved today" : `${days}d in stage`}
+          </span>
+        )}
         {stale ? (
           <span
             className="text-stage-offer bg-stage-offer/10 rounded px-1.5 py-0.5 text-[11px] font-medium tabular-nums"
@@ -76,10 +87,13 @@ export function KanbanCardContent({
 
 export function KanbanCard({
   application,
+  pending = false,
   readOnly,
   onOpen,
 }: {
   application: BoardApplication;
+  /** The card's stage move is still committing on the server. */
+  pending?: boolean;
   readOnly: boolean;
   /** Open the candidate record - suppressed by the board right after a drag. */
   onOpen?: (application: BoardApplication) => void;
@@ -101,7 +115,7 @@ export function KanbanCard({
         isDragging && "opacity-40",
       )}
     >
-      <KanbanCardContent application={application} />
+      <KanbanCardContent application={application} pending={pending} />
     </div>
   );
 }

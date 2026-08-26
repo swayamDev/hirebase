@@ -15,6 +15,7 @@ import {
 } from "@/components/kanban/add-candidate-modal";
 import { SourceCandidatesModal } from "@/components/sourcing/source-candidates-modal";
 import { StageMixBar } from "@/components/stage-mix-bar";
+import { SubmitButton } from "@/components/submit-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -218,9 +219,9 @@ export default async function JobPage({
             Edit
           </Button>
           <form action={isOpen ? closeJob.bind(null, job._id) : reopenJob.bind(null, job._id)}>
-            <Button size="sm" variant="outline" type="submit">
+            <SubmitButton size="sm" variant="outline">
               {isOpen ? "Close job" : "Reopen job"}
-            </Button>
+            </SubmitButton>
           </form>
         </div>
       </div>

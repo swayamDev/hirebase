@@ -160,6 +160,7 @@ function AgentChat() {
                 variant="outline"
                 size="sm"
                 className="text-muted-foreground hover:text-foreground h-auto rounded-md px-2.5 py-1.5 text-left font-normal whitespace-normal"
+                disabled={busy}
                 onClick={() => sendMessage({ text: prompt })}
               >
                 {prompt}

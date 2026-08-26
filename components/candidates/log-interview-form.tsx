@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Select,
   SelectContent,
@@ -194,6 +195,7 @@ export function LogInterviewForm({
 
           <div>
             <Button type="submit" size="sm" disabled={isPending}>
+              {isPending ? <Spinner /> : null}
               {isPending ? "Logging…" : "Log interview"}
             </Button>
           </div>

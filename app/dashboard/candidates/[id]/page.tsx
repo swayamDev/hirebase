@@ -9,6 +9,7 @@ import { StagePill } from "@/components/stage-rail";
 import { InitialsChip } from "@/components/initials-chip";
 import { LogInterviewForm } from "@/components/candidates/log-interview-form";
 import { Section, FieldRow } from "@/components/shell/panels";
+import { SubmitButton } from "@/components/submit-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -196,9 +197,9 @@ export default async function CandidatePage({
           </Button>
           {!candidate.archived && (
             <form action={archiveCandidate.bind(null, candidate._id)}>
-              <Button type="submit" variant="outline" size="sm">
+              <SubmitButton variant="outline" size="sm">
                 Archive candidate
-              </Button>
+              </SubmitButton>
             </form>
           )}
         </div>

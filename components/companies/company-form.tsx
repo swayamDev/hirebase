@@ -6,6 +6,7 @@ import { useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 
 export type CompanyFormValues = {
@@ -32,6 +33,7 @@ function SubmitButton({
   const { pending } = useFormStatus();
   return (
     <Button type="submit" size="sm" disabled={pending}>
+      {pending ? <Spinner /> : null}
       {pending ? pendingLabel : label}
     </Button>
   );

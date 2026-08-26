@@ -15,6 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 
 export type AvailableCandidate = {
   _id: string;
@@ -82,6 +83,7 @@ function AddRow({
               });
             }}
           >
+            {state === "adding" ? <Spinner /> : null}
             {state === "adding" ? "Adding…" : "Add"}
           </Button>
         )}

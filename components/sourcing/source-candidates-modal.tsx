@@ -19,6 +19,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Spinner } from "@/components/ui/spinner";
 
 type RowState = "idle" | "adding" | "added" | "failed";
 
@@ -84,6 +85,7 @@ function MatchRow({
               });
             }}
           >
+            {state === "adding" ? <Spinner /> : null}
             {state === "adding" ? "Adding…" : "Add"}
           </Button>
         )}

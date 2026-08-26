@@ -42,6 +42,20 @@ export function KanbanBoard({
     useState<BoardApplication[]>(initialApplications);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Cards whose stage move is still committing on the server. Kept as a set
+  // because several cards can be in flight at once.
+  const [pendingIds, setPendingIds] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
+
+  function markPending(id: string, pending: boolean) {
+    setPendingIds((prev) => {
+      const next = new Set(prev);
+      if (pending) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }
 
   // Revalidated server data (e.g. after "Add candidate to pipeline") must win:
   // re-sync local board state whenever the server prop identity changes.
@@ -123,6 +137,7 @@ export function KanbanBoard({
       ),
     );
 
+    markPending(application._id, true);
     moveApplication(application._id, targetStage)
       .then((result) => {
         if ("error" in result) {
@@ -145,6 +160,9 @@ export function KanbanBoard({
       .catch(() => {
         revert();
         setError("Could not move the candidate. Try again.");
+      })
+      .finally(() => {
+        markPending(application._id, false);
       });
   }
 
@@ -179,6 +197,7 @@ export function KanbanBoard({
               key={stage}
               stage={stage}
               applications={columns.get(stage) ?? []}
+              pendingIds={pendingIds}
               readOnly={readOnly}
               onOpen={openCandidate}
             />
@@ -197,11 +216,13 @@ export function KanbanBoard({
 function KanbanColumn({
   stage,
   applications,
+  pendingIds,
   readOnly,
   onOpen,
 }: {
   stage: Stage;
   applications: BoardApplication[];
+  pendingIds: ReadonlySet<string>;
   readOnly: boolean;
   onOpen: (application: BoardApplication) => void;
 }) {
@@ -226,6 +247,7 @@ function KanbanColumn({
           <KanbanCard
             key={application._id}
             application={application}
+            pending={pendingIds.has(application._id)}
             readOnly={readOnly}
             onOpen={onOpen}
           />

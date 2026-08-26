@@ -7,6 +7,7 @@ import { createJob } from "@/lib/actions/jobs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -206,6 +207,7 @@ export function JobForm({
           type="submit"
           disabled={pending || (!isEdit && companies.length === 0)}
         >
+          {pending ? <Spinner /> : null}
           {pending
             ? isEdit
               ? "Saving…"
