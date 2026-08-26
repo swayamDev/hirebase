@@ -20,12 +20,20 @@ export function Reveal({
   const [shown, setShown] = useState(false);
 
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    const node = ref.current;
+    if (!node) return;
+    if (
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+      typeof IntersectionObserver === "undefined"
+    ) {
       setShown(true);
       return;
     }
-    const node = ref.current;
-    if (!node) return;
+    // already on screen (initial viewport, anchor jump) - reveal right away
+    if (node.getBoundingClientRect().top < window.innerHeight) {
+      setShown(true);
+      return;
+    }
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting) {

@@ -208,6 +208,12 @@ body {
   color: var(--foreground);
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
 /* ── Landing motion + texture ── */
 @keyframes hirebase-marquee {
   to { transform: translateX(-50%); }

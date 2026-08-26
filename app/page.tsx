@@ -418,8 +418,10 @@ export default async function LandingPage() {
               { n: "03", t: "Place faster", b: "One click to pipeline. Drift gets flagged before searches go cold." },
             ].map((step, i) => (
               <Reveal key={step.n} delay={i * 120}>
-                <p className="text-muted-foreground/50 font-mono text-sm">{step.n}</p>
-                <h3 className="mt-2 text-lg font-semibold tracking-tight">{step.t}</h3>
+                <span className="flex size-9 items-center justify-center rounded-full bg-[#FFF1E6] font-mono text-xs font-bold text-[#D14E0A]">
+                  {step.n}
+                </span>
+                <h3 className="mt-3 text-lg font-semibold tracking-tight">{step.t}</h3>
                 <p className="text-muted-foreground mt-2 text-sm leading-relaxed">{step.b}</p>
               </Reveal>
             ))}
@@ -443,7 +445,7 @@ export default async function LandingPage() {
               { t: "Embedded & in-house", b: "One workspace per team, seats enforced automatically." },
             ].map((useCase, i) => (
               <Reveal key={useCase.t} delay={i * 100}>
-                <span className="from-stage-applied to-stage-hired block h-0.5 w-8 rounded-full bg-gradient-to-r" />
+                <span className="block h-0.5 w-8 rounded-full bg-gradient-to-r from-[#FFCE3B] to-[#EE5A0E]" />
                 <h3 className="mt-3 text-base font-semibold tracking-tight">{useCase.t}</h3>
                 <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">{useCase.b}</p>
               </Reveal>
@@ -461,8 +463,13 @@ export default async function LandingPage() {
             { t: "People decide, not models", b: "The agent retrieves, summarises and acts on your instruction. It never scores, ranks out, or rejects anyone." },
           ].map((item, i) => (
             <Reveal key={item.t} delay={i * 100}>
-              <h3 className="text-base font-semibold tracking-tight">{item.t}</h3>
-              <p className="text-muted-foreground mt-2 text-sm leading-relaxed">{item.b}</p>
+              <div className="bg-card h-full rounded-2xl border p-6 shadow-xs">
+                <span className="flex size-7 items-center justify-center rounded-full bg-[#FFF1E6] text-xs font-bold text-[#D14E0A]">
+                  ✓
+                </span>
+                <h3 className="mt-3 text-base font-semibold tracking-tight">{item.t}</h3>
+                <p className="text-muted-foreground mt-2 text-sm leading-relaxed">{item.b}</p>
+              </div>
             </Reveal>
           ))}
         </div>
@@ -475,7 +482,7 @@ export default async function LandingPage() {
             <h2 className="font-display text-3xl font-semibold tracking-[-0.02em]">Pricing that scales with your desk</h2>
             <p className="text-muted-foreground mt-2 max-w-md text-sm">Per agency workspace. Seats enforced automatically.</p>
           </Reveal>
-          <div className="grid items-start gap-5 md:grid-cols-3">
+          <div className="mt-10 grid items-start gap-5 md:grid-cols-3">
             {PLANS.map((plan, i) => {
               const highlight = "highlight" in plan && plan.highlight;
               return (
@@ -488,6 +495,11 @@ export default async function LandingPage() {
                         : "shadow-xs",
                     )}
                   >
+                    {highlight ? (
+                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#EE5A0E] px-3 py-1 text-[10px] font-bold tracking-wide text-white uppercase">
+                        Most popular
+                      </span>
+                    ) : null}
                     <div className="flex items-baseline justify-between">
                       <h3 className="font-display text-lg font-bold">
                         {plan.name}
@@ -498,8 +510,10 @@ export default async function LandingPage() {
                           /mo
                         </span>
                       </p>
-                    <p className="text-muted-foreground mt-1 text-sm">{plan.blurb}</p>
                     </div>
+                    <p className="text-muted-foreground mt-1 text-sm">
+                      {plan.blurb}
+                    </p>
                     <ul className="mt-5 space-y-2 text-sm">
                       {plan.features.map((feature) => (
                         <li key={feature} className="flex gap-2.5">
