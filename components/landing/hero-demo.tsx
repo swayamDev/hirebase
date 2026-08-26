@@ -43,7 +43,9 @@ const SCENES: Scene[] = [
 ];
 
 const TYPE_MS = 38;
+const ERASE_MS = 16;
 const HOLD_MS = 2800;
+const CARD_EXIT_MS = 500;
 const CARD_STAGGER_MS = 180;
 
 export function HeroDemo() {
@@ -73,17 +75,28 @@ export function HeroDemo() {
     function playScene(index: number) {
       const question = SCENES[index].question;
       setSceneIndex(index);
-      setTyped("");
       setShowResults(false);
 
+      // type the question in
       for (let i = 1; i <= question.length; i++) {
         schedule(() => setTyped(question.slice(0, i)), 350 + i * TYPE_MS);
       }
       const typedDone = 350 + question.length * TYPE_MS;
       schedule(() => setShowResults(true), typedDone + 250);
+
+      // let the cards fade out fully, then backspace the question
+      const holdEnd = typedDone + 250 + HOLD_MS;
+      schedule(() => setShowResults(false), holdEnd);
+      const eraseStart = holdEnd + CARD_EXIT_MS + 150;
+      for (let i = question.length - 1; i >= 0; i--) {
+        schedule(
+          () => setTyped(question.slice(0, i)),
+          eraseStart + (question.length - i) * ERASE_MS,
+        );
+      }
       schedule(
         () => playScene((index + 1) % SCENES.length),
-        typedDone + 250 + HOLD_MS,
+        eraseStart + question.length * ERASE_MS + 250,
       );
     }
 
@@ -102,19 +115,19 @@ export function HeroDemo() {
       {/* glow bed */}
       <div
         aria-hidden
-        className="absolute -inset-10 rounded-[2.5rem] bg-[radial-gradient(60%_60%_at_50%_40%,rgba(124,92,214,0.4),transparent_70%)] blur-2xl"
+        className="absolute -inset-10 rounded-[2.5rem] bg-[radial-gradient(60%_60%_at_50%_40%,rgba(238,90,14,0.28),transparent_70%)] blur-2xl"
       />
 
-      <div className="relative overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-white/15">
+      <div className="relative overflow-hidden rounded-2xl bg-white shadow-2xl shadow-[#EE5A0E]/15 ring-1 ring-[#231205]/[0.06]">
         {/* the ask bar */}
         <div className="flex items-center gap-3 border-b border-black/[0.07] px-5 py-4">
-          <span className="bg-ai flex size-8 shrink-0 items-center justify-center rounded-full">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#EE5A0E]">
             <Sparkles className="size-4 text-white" />
           </span>
-          <p className="min-h-6 flex-1 text-[15px] font-medium text-black/80">
+          <p className="min-h-6 flex-1 text-left text-[15px] font-medium text-black/80">
             {typed}
             {!reduced && (
-              <span className="bg-ai ml-0.5 inline-block h-4 w-0.5 animate-pulse align-middle" />
+              <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-[#EE5A0E] align-middle" />
             )}
           </p>
         </div>
@@ -133,14 +146,16 @@ export function HeroDemo() {
                   ? "translate-y-0 opacity-100"
                   : "translate-y-3 opacity-0",
                 i === 0
-                  ? "border-ai/35 bg-ai-soft/60"
+                  ? "border-[#EE5A0E]/35 bg-[#FFF1E6]"
                   : "border-black/[0.07] bg-white",
               )}
             >
               <span
                 className={cn(
                   "flex size-10 shrink-0 items-center justify-center rounded-full text-sm font-bold",
-                  i === 0 ? "bg-ai text-white" : "bg-black/[0.06] text-black/60",
+                  i === 0
+                    ? "bg-[#EE5A0E] text-white"
+                    : "bg-black/[0.06] text-black/60",
                 )}
               >
                 {candidate.name
@@ -155,22 +170,22 @@ export function HeroDemo() {
                     {candidate.name}
                   </p>
                   {i === 0 ? (
-                    <span className="bg-ai rounded-md px-1.5 py-0.5 text-[10px] font-bold text-white">
+                    <span className="rounded-md bg-[#EE5A0E] px-1.5 py-0.5 text-[10px] font-bold text-white">
                       Best match
                     </span>
                   ) : null}
                 </div>
-                <p className="truncate text-[13px] text-black/50">
+                <p className="truncate text-left text-[13px] text-black/50">
                   {candidate.note}
                 </p>
               </div>
               <div className="shrink-0 text-right">
-                <p className="text-ai font-display text-lg font-bold tabular-nums">
+                <p className="font-display text-lg font-bold text-[#EE5A0E] tabular-nums">
                   {candidate.pct}%
                 </p>
                 <div className="mt-1 h-1 w-14 overflow-hidden rounded-full bg-black/[0.08]">
                   <span
-                    className="bg-ai block h-full rounded-full transition-all duration-700"
+                    className="block h-full rounded-full bg-[#EE5A0E] transition-all duration-700"
                     style={{ width: showResults ? `${candidate.pct}%` : "0%" }}
                   />
                 </div>
@@ -180,7 +195,7 @@ export function HeroDemo() {
         </div>
       </div>
 
-      <p className="relative mt-5 text-center text-sm text-white/55">
+      <p className="relative mt-5 text-center text-sm text-[#231205]/55">
         Every answer comes from CVs and interview notes your agency already
         has.
       </p>

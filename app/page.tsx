@@ -83,18 +83,18 @@ function AskVisual() {
           Who fits this brief?
         </p>
         <div className="flex items-start gap-2.5">
-          <span className="bg-ai mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white">
+          <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-[#EE5A0E] text-[10px] font-bold text-white">
             V
           </span>
           <div className="text-sm leading-relaxed">
             <p>
-              <span className="text-ai font-semibold underline underline-offset-2">
+              <span className="font-semibold text-[#D14E0A] underline underline-offset-2">
                 Oluwaseun Adeyemi
               </span>{" "}
               - <em>&quot;strongest final round this year&quot;</em>
             </p>
             <p className="mt-1.5">
-              <span className="text-ai font-semibold underline underline-offset-2">
+              <span className="font-semibold text-[#D14E0A] underline underline-offset-2">
                 Priya Raghavan
               </span>{" "}
               - reached offer for a similar role
@@ -120,10 +120,10 @@ function SourcingVisual() {
             key={row.name}
             className={cn(
               "flex items-center gap-3 rounded-xl border p-3",
-              i === 0 ? "border-ai/35 bg-ai-soft/50" : "bg-card",
+              i === 0 ? "border-[#EE5A0E]/35 bg-[#FFF1E6]" : "bg-card",
             )}
           >
-            <span className="text-ai font-display w-11 text-base font-bold tabular-nums">
+            <span className="font-display w-11 text-base font-bold text-[#EE5A0E] tabular-nums">
               {row.pct}%
             </span>
             <div className="min-w-0 flex-1">
@@ -135,7 +135,7 @@ function SourcingVisual() {
             <span
               className={cn(
                 "shrink-0 rounded-md px-2 py-1 text-[11px] font-semibold",
-                i === 0 ? "bg-ai text-white" : "text-muted-foreground border",
+                i === 0 ? "bg-[#EE5A0E] text-white" : "text-muted-foreground border",
               )}
             >
               Add
@@ -155,23 +155,39 @@ export default async function LandingPage() {
 
   return (
     <main className="flex-1">
-      {/* ══ DARK WORLD ══ */}
-      <div className="grain relative overflow-hidden bg-[#131120] text-white">
-        <div aria-hidden className="pointer-events-none absolute left-1/2 top-[-20rem] size-[70rem] -translate-x-1/2 rounded-full border border-white/[0.04]" />
-        <div aria-hidden className="pointer-events-none absolute left-1/2 top-[-14rem] size-[52rem] -translate-x-1/2 rounded-full border border-white/[0.05]" />
-        <div aria-hidden className="pointer-events-none absolute left-1/2 top-[-8rem] size-[36rem] -translate-x-1/2 rounded-full border border-white/[0.06]" />
-        <div aria-hidden className="pointer-events-none absolute left-1/2 top-[-26rem] h-[44rem] w-[80rem] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(124,92,214,0.18),transparent)]" />
+      {/* ══ SUNRISE WORLD ══ */}
+      <div className="grain relative overflow-hidden bg-[#FFFBF4] text-[#231205]">
+        {/* warm washes */}
+        <div aria-hidden className="animate-drift-slow pointer-events-none absolute -left-40 top-1/3 h-[38rem] w-[38rem] rounded-full bg-[radial-gradient(closest-side,rgba(255,166,77,0.42),transparent_70%)] blur-2xl" />
+        <div aria-hidden className="animate-drift pointer-events-none absolute -right-48 top-1/2 h-[42rem] w-[42rem] rounded-full bg-[radial-gradient(closest-side,rgba(238,90,14,0.30),transparent_70%)] blur-2xl" />
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-96 bg-[linear-gradient(to_top,rgba(255,196,128,0.5),transparent)]" />
+
+        {/* hand-drawn sun arcs */}
+        <svg
+          aria-hidden
+          viewBox="0 0 400 400"
+          className="pointer-events-none absolute -left-24 top-24 hidden w-72 -rotate-12 lg:block"
+        >
+          <path d="M40 300 C 60 140, 200 60, 360 80" fill="none" stroke="#FFCE3B" strokeWidth="14" strokeLinecap="round" />
+        </svg>
+        <svg
+          aria-hidden
+          viewBox="0 0 400 400"
+          className="pointer-events-none absolute -right-20 top-1/2 hidden w-64 rotate-[160deg] lg:block"
+        >
+          <path d="M40 300 C 60 140, 200 60, 360 80" fill="none" stroke="#FFCE3B" strokeWidth="14" strokeLinecap="round" />
+        </svg>
 
         {/* nav */}
         <header className="relative z-10">
           <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-5">
             <span className="font-display text-xl font-bold tracking-tight">
-              Hirebase<span className="text-[#9F8BEF]">.</span>
+              Hirebase<span className="text-[#EE5A0E]">.</span>
             </span>
             <div className="flex items-center gap-2">
               {userId ? (
                 <Button
-                  className="bg-white text-[#131120] hover:bg-white/90"
+                  className="bg-[#EE5A0E] text-white hover:bg-[#D14E0A]"
                   nativeButton={false}
                   render={<Link href="/dashboard" />}
                 >
@@ -181,14 +197,14 @@ export default async function LandingPage() {
                 <>
                   <Button
                     variant="ghost"
-                    className="text-white/80 hover:bg-white/10 hover:text-white"
+                    className="text-[#231205]/70 hover:bg-[#231205]/5 hover:text-[#231205]"
                     nativeButton={false}
                     render={<Link href="/sign-in" />}
                   >
                     Sign in
                   </Button>
                   <Button
-                    className="bg-white text-[#131120] hover:bg-white/90"
+                    className="bg-[#EE5A0E] text-white hover:bg-[#D14E0A]"
                     nativeButton={false}
                     render={<Link href="/sign-up" />}
                   >
@@ -200,44 +216,118 @@ export default async function LandingPage() {
           </div>
         </header>
 
-        {/* hero - two lines, one button, the product itself */}
-        <section className="relative z-10 mx-auto grid w-full max-w-7xl items-center gap-14 px-6 pt-14 pb-20 sm:pt-20 xl:grid-cols-2 xl:gap-10">
-          <div>
-            <h1 className="fade-up font-display text-[12vw] leading-[1.04] font-semibold tracking-[-0.03em] text-balance sm:text-6xl xl:text-[64px]">
-              The CRM every recruiter deserves.
-            </h1>
-            <p className="fade-up fade-up-2 font-display mt-4 text-2xl font-medium tracking-[-0.02em] text-balance sm:text-3xl">
-              <span className="text-[#9F8BEF]">Driven by AI that never forgets a candidate.</span>
-            </p>
-            <div className="fade-up fade-up-3 mt-9 flex flex-wrap items-center gap-4">
-              <Button
-                size="lg"
-                className="bg-white text-[#131120] hover:bg-white/90"
-                nativeButton={false}
-                render={<Link href={cta} />}
+        {/* hero - centered thesis, then the product itself */}
+        <section className="relative z-10 mx-auto flex w-full max-w-5xl flex-col items-center px-6 pt-12 pb-16 text-center sm:pt-16">
+          <p className="fade-up inline-flex items-center gap-2 rounded-full border border-[#231205]/10 bg-white/70 px-3.5 py-1.5 text-xs font-semibold tracking-wide text-[#231205]/70">
+            <span className="size-1.5 rounded-full bg-[#EE5A0E]" />
+            AI-native CRM for recruitment agencies
+          </p>
+
+          <h1 className="fade-up fade-up-2 font-display mt-6 max-w-4xl text-[11vw] leading-[1.04] font-semibold tracking-[-0.03em] text-balance sm:text-6xl xl:text-7xl">
+            The CRM every recruiter{" "}
+            <span className="relative inline-block whitespace-nowrap">
+              deserves.
+              <svg
+                aria-hidden
+                viewBox="0 0 220 24"
+                preserveAspectRatio="none"
+                className="absolute -bottom-2 left-0 h-4 w-full"
               >
-                Start free
-              </Button>
-              <span className="text-sm text-white/60">No card needed</span>
-            </div>
+                <path
+                  d="M6 16 C 60 6, 140 4, 214 12"
+                  fill="none"
+                  stroke="#FFCE3B"
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </span>
+          </h1>
+
+          <p className="fade-up fade-up-3 mt-6 max-w-2xl text-lg text-balance text-[#231205]/65 sm:text-xl">
+            Driven by AI that never forgets a candidate. Ask your pipeline
+            questions in plain English and place people faster.
+          </p>
+
+          <div className="fade-up fade-up-3 mt-9 flex flex-wrap items-center justify-center gap-3">
+            <Button
+              size="lg"
+              className="bg-[#EE5A0E] text-white shadow-lg shadow-[#EE5A0E]/30 hover:bg-[#D14E0A]"
+              nativeButton={false}
+              render={<Link href={cta} />}
+            >
+              Start free
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="border-[#231205]/15 bg-white/70 text-[#231205] hover:bg-white"
+              nativeButton={false}
+              render={<Link href="#product" />}
+            >
+              See it in action
+            </Button>
           </div>
 
-          <div className="fade-up fade-up-3 relative mx-auto w-full max-w-2xl xl:mx-0">
+          <p className="fade-up fade-up-4 mt-7 text-[11px] font-semibold tracking-[0.28em] text-[#231205]/40 uppercase">
+            No card needed&ensp;·&ensp;Track candidates&ensp;·&ensp;Never lose a
+            lead
+          </p>
+
+          {/* product visual with floating proof */}
+          <div className="fade-up fade-up-4 relative mx-auto mt-14 w-full max-w-2xl">
+            {/* review chip */}
+            <div className="absolute -left-44 top-8 hidden -rotate-3 xl:block">
+              <div className="animate-float rounded-xl bg-white p-3.5 text-left shadow-xl shadow-[#EE5A0E]/10 ring-1 ring-[#231205]/5">
+                <p aria-hidden className="text-sm tracking-[0.2em] text-[#EE5A0E]">
+                  ★★★★★
+                </p>
+                <p className="mt-1 text-xs font-semibold text-[#231205]/80">
+                  Trusted by 100+ agencies
+                </p>
+              </div>
+            </div>
+
+            {/* time-to-fill stat card */}
+            <div className="absolute -right-48 top-1/3 hidden rotate-2 xl:block">
+              <div className="animate-float-delay w-44 rounded-xl bg-[#EE5A0E] p-4 text-left text-white shadow-xl shadow-[#EE5A0E]/30">
+                <p className="text-[11px] font-semibold tracking-wide text-white/80 uppercase">
+                  Time to fill
+                </p>
+                <p className="font-display mt-1 text-3xl font-bold">19 days</p>
+                <p className="mt-1 text-xs text-white/80">
+                  8 days faster than last quarter
+                </p>
+              </div>
+            </div>
+
+            {/* follow-up chip */}
+            <div className="absolute bottom-16 -left-36 z-10 hidden rotate-1 xl:block">
+              <div className="animate-float flex items-center gap-2.5 rounded-xl bg-white px-3.5 py-3 shadow-xl shadow-[#EE5A0E]/10 ring-1 ring-[#231205]/5">
+                <span className="flex size-6 items-center justify-center rounded-full bg-[#1B9E57] text-xs font-bold text-white">
+                  ✓
+                </span>
+                <p className="text-xs font-semibold text-[#231205]/80">
+                  Follow-up nudged · quiet for 12 days
+                </p>
+              </div>
+            </div>
+
             <HeroDemo />
           </div>
         </section>
 
         {/* query marquee */}
-        <div className="relative z-10 border-t border-white/10 py-4">
+        <div className="relative z-10 border-t border-[#231205]/10 py-4">
           <div className="flex overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
             <div className="animate-marquee flex shrink-0 items-center gap-8 pr-8">
               {[...QUERIES, ...QUERIES].map((query, i) => (
                 <span
                   key={i}
-                  className="flex items-center gap-8 font-mono text-xs whitespace-nowrap text-white/40"
+                  className="flex items-center gap-8 font-mono text-xs whitespace-nowrap text-[#231205]/45"
                 >
                   “{query}”
-                  <span className="bg-white/20 size-1 rounded-full" />
+                  <span className="size-1 rounded-full bg-[#EE5A0E]/40" />
                 </span>
               ))}
             </div>
@@ -274,7 +364,7 @@ export default async function LandingPage() {
           <div className="grid items-center gap-10 lg:grid-cols-2">
             <Reveal delay={140} className="lg:order-first"><AskVisual /></Reveal>
             <Reveal>
-              <span className="bg-ai-soft text-ai inline-block rounded-md px-2 py-0.5 text-xs font-semibold">AI · Pro</span>
+              <span className="inline-block rounded-md bg-[#FFF1E6] px-2 py-0.5 text-xs font-semibold text-[#D14E0A]">AI · Pro</span>
               <h2 className="font-display mt-4 text-3xl font-semibold tracking-[-0.02em]">
                 Ask your database like a colleague
               </h2>
@@ -284,16 +374,16 @@ export default async function LandingPage() {
                 evidence beside them.
               </p>
               <ul className="text-muted-foreground mt-5 space-y-2 text-sm">
-                <li className="flex gap-2.5"><span className="bg-ai mt-2 size-1 shrink-0 rounded-full" />Plain-English questions over CVs and debriefs</li>
-                <li className="flex gap-2.5"><span className="bg-ai mt-2 size-1 shrink-0 rounded-full" />Acts on instruction: move stages, log interviews</li>
-                <li className="flex gap-2.5"><span className="bg-ai mt-2 size-1 shrink-0 rounded-full" />Never scores or rejects - humans decide</li>
+                <li className="flex gap-2.5"><span className="mt-2 size-1 shrink-0 rounded-full bg-[#EE5A0E]" />Plain-English questions over CVs and debriefs</li>
+                <li className="flex gap-2.5"><span className="mt-2 size-1 shrink-0 rounded-full bg-[#EE5A0E]" />Acts on instruction: move stages, log interviews</li>
+                <li className="flex gap-2.5"><span className="mt-2 size-1 shrink-0 rounded-full bg-[#EE5A0E]" />Never scores or rejects - humans decide</li>
               </ul>
             </Reveal>
           </div>
 
           <div className="grid items-center gap-10 lg:grid-cols-2">
             <Reveal>
-              <span className="bg-ai-soft text-ai inline-block rounded-md px-2 py-0.5 text-xs font-semibold">AI · Pro</span>
+              <span className="inline-block rounded-md bg-[#FFF1E6] px-2 py-0.5 text-xs font-semibold text-[#D14E0A]">AI · Pro</span>
               <h2 className="font-display mt-4 text-3xl font-semibold tracking-[-0.02em]">
                 One button. Your shortlist.
               </h2>
@@ -303,9 +393,9 @@ export default async function LandingPage() {
                 pipeline.
               </p>
               <ul className="text-muted-foreground mt-5 space-y-2 text-sm">
-                <li className="flex gap-2.5"><span className="bg-ai mt-2 size-1 shrink-0 rounded-full" />Semantic match, not keyword bingo</li>
-                <li className="flex gap-2.5"><span className="bg-ai mt-2 size-1 shrink-0 rounded-full" />Relative strength across your own pool</li>
-                <li className="flex gap-2.5"><span className="bg-ai mt-2 size-1 shrink-0 rounded-full" />A place to start - never a ranking of people</li>
+                <li className="flex gap-2.5"><span className="mt-2 size-1 shrink-0 rounded-full bg-[#EE5A0E]" />Semantic match, not keyword bingo</li>
+                <li className="flex gap-2.5"><span className="mt-2 size-1 shrink-0 rounded-full bg-[#EE5A0E]" />Relative strength across your own pool</li>
+                <li className="flex gap-2.5"><span className="mt-2 size-1 shrink-0 rounded-full bg-[#EE5A0E]" />A place to start - never a ranking of people</li>
               </ul>
             </Reveal>
             <Reveal delay={140}><SourcingVisual /></Reveal>
@@ -394,7 +484,7 @@ export default async function LandingPage() {
                     className={cn(
                       "bg-card relative rounded-2xl border p-7",
                       highlight
-                        ? "border-ai/40 shadow-[0_0_50px_-12px_rgba(124,92,214,0.45)] md:-mt-4"
+                        ? "border-[#EE5A0E]/40 shadow-[0_0_50px_-12px_rgba(238,90,14,0.45)] md:-mt-4"
                         : "shadow-xs",
                     )}
                   >
@@ -416,7 +506,7 @@ export default async function LandingPage() {
                           <span
                             className={cn(
                               "mt-2 size-1 shrink-0 rounded-full",
-                              highlight ? "bg-ai" : "bg-foreground/40",
+                              highlight ? "bg-[#EE5A0E]" : "bg-foreground/40",
                             )}
                           />
                           {feature}
@@ -424,7 +514,11 @@ export default async function LandingPage() {
                       ))}
                     </ul>
                     <Button
-                      className="mt-6 w-full"
+                      className={cn(
+                        "mt-6 w-full",
+                        highlight &&
+                          "bg-[#EE5A0E] text-white hover:bg-[#D14E0A]",
+                      )}
                       variant={highlight ? "default" : "outline"}
                       nativeButton={false}
                       render={<Link href={cta} />}
@@ -460,22 +554,22 @@ export default async function LandingPage() {
       </section>
 
       {/* ══ DARK CLOSE ══ */}
-      <section className="grain relative overflow-hidden bg-[#131120] text-white">
+      <section className="grain relative overflow-hidden bg-[#221307] text-white">
         <div
           aria-hidden
-          className="pointer-events-none absolute left-1/2 top-[-40%] h-[30rem] w-[60rem] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(124,92,214,0.22),transparent)]"
+          className="pointer-events-none absolute left-1/2 top-[-40%] h-[30rem] w-[60rem] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(238,90,14,0.28),transparent)]"
         />
         <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-7 px-6 py-20">
           <Reveal>
             <h2 className="font-display max-w-xl text-3xl font-bold tracking-tight text-balance sm:text-4xl">
               Remember everyone. Place faster
-              <span className="text-[#9F8BEF]">.</span>
+              <span className="text-[#FF8A47]">.</span>
             </h2>
           </Reveal>
           <Reveal delay={120}>
             <Button
               size="lg"
-              className="bg-white text-[#131120] hover:bg-white/90"
+              className="bg-[#EE5A0E] text-white hover:bg-[#D14E0A]"
               nativeButton={false}
               render={<Link href={cta} />}
             >
@@ -486,7 +580,7 @@ export default async function LandingPage() {
         <footer className="relative z-10 border-t border-white/10">
           <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-3 px-6 py-6 text-sm text-white/60">
             <span className="font-display font-bold text-white">
-              Hirebase<span className="text-[#9F8BEF]">.</span>
+              Hirebase<span className="text-[#FF8A47]">.</span>
             </span>
             <span className="font-mono text-xs">
               Next.js · Clerk · Sanity Context
