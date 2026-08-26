@@ -6,6 +6,7 @@ import { requireOrg } from "@/lib/tenant";
 import { readClient } from "@/lib/sanity/client";
 import { closeJob, reopenJob } from "@/lib/actions/jobs";
 import { type Stage } from "@/sanity/schemas/stages";
+import { FilterChips } from "@/components/filter-chips";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { type BoardApplication } from "@/components/kanban/kanban-card";
 import {
@@ -99,10 +100,13 @@ function Stat({
 
 export default async function JobPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { id } = await params;
+  const { view } = await searchParams;
   const { orgId } = await requireOrg();
 
   const [job, applications, availableCandidates] = await Promise.all([
@@ -128,6 +132,9 @@ export default async function JobPage({
       (stageCounts[application.stage] ?? 0) + 1;
   }
   const staleCount = applications.filter(isStale).length;
+
+  const boardApplications =
+    view === "stale" ? applications.filter(isStale) : applications;
 
   const metaItems: ReactNode[] = [];
   if (job.companyName) {
@@ -238,8 +245,16 @@ export default async function JobPage({
       </div>
 
       <div className="mt-6">
+        <FilterChips
+          param="view"
+          options={[{ value: "stale", label: "Stale only" }]}
+          allLabel="All candidates"
+        />
+      </div>
+
+      <div className="mt-3">
         <KanbanBoard
-          initialApplications={applications}
+          initialApplications={boardApplications}
           jobId={job._id}
           readOnly={!isOpen}
         />

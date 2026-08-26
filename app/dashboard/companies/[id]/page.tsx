@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { requireOrg } from "@/lib/tenant";
 import { readClient } from "@/lib/sanity/client";
-import { type Stage } from "@/sanity/schemas/stages";
+import { STAGES, STAGE_LABELS, type Stage } from "@/sanity/schemas/stages";
+import { FilterChips } from "@/components/filter-chips";
 import { StagePill, StageRail } from "@/components/stage-rail";
 import { InitialsChip } from "@/components/initials-chip";
 import { StageMixBar } from "@/components/stage-mix-bar";
@@ -87,11 +88,14 @@ function timeAgo(iso: string) {
 
 export default async function CompanyPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { orgId } = await requireOrg();
   const { id } = await params;
+  const { stage } = await searchParams;
 
   const [company, jobs, applications] = await Promise.all([
     readClient.fetch<CompanyDoc | null>(COMPANY_QUERY, { id, orgId }),
@@ -108,6 +112,17 @@ export default async function CompanyPage({
       application.job &&
       application.job.orgId === orgId,
   );
+
+  const activeStage =
+    typeof stage === "string" && (STAGES as readonly string[]).includes(stage)
+      ? (stage as Stage)
+      : null;
+
+  const visibleApplications = activeStage
+    ? ownedApplications.filter(
+        (application) => application.stage === activeStage,
+      )
+    : ownedApplications;
 
   return (
     <div className="pt-5">
@@ -163,15 +178,32 @@ export default async function CompanyPage({
       <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_300px]">
         {/* Main zone */}
         <div className="min-w-0">
-          <Section title="Candidates in play" count={ownedApplications.length}>
+          <Section
+            title="Candidates in play"
+            count={visibleApplications.length}
+            action={
+              <FilterChips
+                param="stage"
+                options={STAGES.map((value) => ({
+                  value,
+                  label: STAGE_LABELS[value],
+                }))}
+                allLabel="All"
+              />
+            }
+          >
             {ownedApplications.length === 0 ? (
               <p className="text-muted-foreground py-4 text-[13px]">
                 No candidates in play yet - add candidates from one of this
                 client&apos;s job pages.
               </p>
+            ) : visibleApplications.length === 0 ? (
+              <p className="text-muted-foreground border-t py-4 text-[13px]">
+                No candidates in this stage.
+              </p>
             ) : (
               <div className="divide-y border-t">
-                {ownedApplications.map((application) => (
+                {visibleApplications.map((application) => (
                   <div
                     key={application._id}
                     className="hover:bg-muted/40 relative flex cursor-pointer items-center gap-3 py-2.5 text-[13px] transition-colors"
