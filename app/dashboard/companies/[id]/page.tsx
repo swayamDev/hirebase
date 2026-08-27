@@ -37,6 +37,7 @@ type ApplicationRow = {
     _id: string;
     name: string;
     headline?: string;
+    avatarUrl?: string;
     orgId: string;
   } | null;
   job: { _id: string; title: string; orgId: string } | null;
@@ -63,7 +64,7 @@ const JOBS_QUERY = `*[_type == "job" && orgId == $orgId && company._ref == $id]
 const APPLICATIONS_QUERY = `*[_type == "application" && orgId == $orgId && job->company._ref == $id]
   | order(stageUpdatedAt desc)[0...25]{
     _id, stage, stageUpdatedAt,
-    "candidate": candidate->{ _id, name, headline, orgId },
+    "candidate": candidate->{ _id, name, headline, avatarUrl, orgId },
     "job": job->{ _id, title, orgId }
   }`;
 
@@ -210,6 +211,7 @@ export default async function CompanyPage({
                   >
                     <InitialsChip
                       name={application.candidate!.name}
+                      src={application.candidate!.avatarUrl}
                       size="sm"
                     />
                     <div className="min-w-0 flex-1">

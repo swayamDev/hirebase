@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 type JobDetail = {
   _id: string;
   title: string;
+  description: string | null;
   seniority: string | null;
   salaryRange: string | null;
   status: "open" | "closed";
@@ -33,6 +34,7 @@ type JobDetail = {
 const JOB_QUERY = `*[_type == "job" && _id == $id && orgId == $orgId][0]{
   _id,
   title,
+  description,
   seniority,
   salaryRange,
   status,
@@ -40,13 +42,22 @@ const JOB_QUERY = `*[_type == "job" && _id == $id && orgId == $orgId][0]{
   "companyId": company->_id
 }`;
 
+/** Same embedding scorer as sourcing, but over the candidates already on this board. */
+const BOARD_SCORES_QUERY = `*[
+  _type == "candidate" &&
+  orgId == $orgId &&
+  count(*[_type == "application" && orgId == $orgId && job._ref == $jobId && candidate._ref == ^._id]) > 0
+] | score(text::semanticSimilarity($queryText)) | order(_score desc) { _id, _score }`;
+
 const APPLICATIONS_QUERY = `*[_type == "application" && orgId == $orgId && job._ref == $jobId] | order(stageUpdatedAt desc) {
   _id,
   stage,
   stageUpdatedAt,
   "candidateId": candidate->_id,
   "candidateName": candidate->name,
-  "candidateHeadline": candidate->headline
+  "candidateHeadline": candidate->headline,
+  "candidateAvatarUrl": candidate->avatarUrl,
+  offerAmount
 }`;
 
 const AVAILABLE_CANDIDATES_QUERY = `*[
@@ -54,7 +65,7 @@ const AVAILABLE_CANDIDATES_QUERY = `*[
   orgId == $orgId &&
   archived != true &&
   count(*[_type == "application" && orgId == $orgId && job._ref == $jobId && candidate._ref == ^._id]) == 0
-] | order(createdAt desc) { _id, name, headline, createdAt }`;
+] | order(createdAt desc) { _id, name, headline, avatarUrl, createdAt }`;
 
 const SENIORITY_LABELS: Record<string, string> = {
   junior: "Junior",
@@ -108,7 +119,7 @@ export default async function JobPage({
 }) {
   const { id } = await params;
   const { view } = await searchParams;
-  const { orgId } = await requireOrg();
+  const { orgId, has } = await requireOrg();
 
   const [job, applications, availableCandidates] = await Promise.all([
     readClient.fetch<JobDetail | null>(JOB_QUERY, { id, orgId }),
@@ -124,6 +135,44 @@ export default async function JobPage({
 
   if (!job) notFound();
 
+  // Match % per card - the sourcing scorer, run over the board's own pool.
+  // Contrast-stretched across this pool, so it's a relative "who fits the
+  // brief best here", never an absolute grade. Pro-only; fails soft.
+  const matchByCandidate = new Map<string, number>();
+  if (has({ feature: "ai_agent" }) && applications.length > 0) {
+    const queryText = [job.title, job.seniority, job.description]
+      .filter(Boolean)
+      .join(". ")
+      .slice(0, 1200);
+    try {
+      const scored = await readClient.fetch<{ _id: string; _score: number }[]>(
+        BOARD_SCORES_QUERY,
+        { orgId, jobId: id, queryText },
+      );
+      if (scored.length > 0) {
+        const max = scored[0]._score;
+        const min = scored[scored.length - 1]._score;
+        const spread = max - min;
+        for (const row of scored) {
+          matchByCandidate.set(
+            row._id,
+            spread > 0
+              ? Math.round(35 + 60 * ((row._score - min) / spread))
+              : 75,
+          );
+        }
+      }
+    } catch {
+      // Embeddings unavailable - cards simply render without a match figure.
+    }
+  }
+  const applicationsWithMatch = applications.map((application) => ({
+    ...application,
+    matchPct: application.candidateId
+      ? (matchByCandidate.get(application.candidateId) ?? null)
+      : null,
+  }));
+
   const isOpen = job.status === "open";
 
   // Pipeline summary - all computed from the board data already fetched.
@@ -135,7 +184,9 @@ export default async function JobPage({
   const staleCount = applications.filter(isStale).length;
 
   const boardApplications =
-    view === "stale" ? applications.filter(isStale) : applications;
+    view === "stale"
+      ? applicationsWithMatch.filter(isStale)
+      : applicationsWithMatch;
 
   const metaItems: ReactNode[] = [];
   if (job.companyName) {

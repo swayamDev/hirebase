@@ -1599,6 +1599,7 @@ function buildDocs(): SeedDoc[] {
     name: c.name,
     email: c.email,
     headline: c.headline,
+    avatarUrl: `https://i.pravatar.cc/150?u=${sid("candidate", pad(c.n))}`,
     skills: c.skills,
     cvText: c.cv,
     source: c.source,
@@ -1606,6 +1607,14 @@ function buildDocs(): SeedDoc[] {
     // A candidate is always added before their oldest application.
     createdAt: daysAgo(Math.max(c.addedDays, (maxAppliedByCand.get(c.n) ?? 0) + 2)),
   }));
+
+  // Deterministic offer figure per application - stable across reseeds.
+  const offerAmountFor = (cand: number, job: string): string => {
+    let hash = 7;
+    for (const ch of `${job}.${cand}`) hash = (hash * 31 + ch.charCodeAt(0)) | 0;
+    const thousands = 55 + (Math.abs(hash) % 41); // £55k–£95k band
+    return `£${thousands},000`;
+  };
 
   const applicationDocs: SeedDoc[] = applications.map(([cand, job, stage, appliedDays, stageDays]) => ({
     _id: sid("application", `${pad(cand)}-${job}`),
@@ -1618,6 +1627,13 @@ function buildDocs(): SeedDoc[] {
     // when both share a day offset (fresh "applied" rows).
     appliedAt: daysAgo(appliedDays + 0.25),
     stageUpdatedAt: daysAgo(stageDays),
+    // Offers carry their figure - the thing clients and candidates ask about.
+    ...(stage === "offer" || stage === "hired"
+      ? {
+          offerAmount: offerAmountFor(cand, job),
+          offerSentAt: daysAgo(stageDays),
+        }
+      : {}),
   }));
 
   const interviewDocs: SeedDoc[] = interviews.map((iv) => ({

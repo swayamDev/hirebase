@@ -33,6 +33,12 @@ export const candidate = defineType({
       description: "One-line summary, e.g. 'Senior React engineer, fintech'",
     }),
     defineField({
+      name: "avatarUrl",
+      title: "Avatar URL",
+      type: "url",
+      description: "Profile photo (seeded demo data uses placeholder portraits)",
+    }),
+    defineField({
       name: "skills",
       title: "Skills",
       type: "array",

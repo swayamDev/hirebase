@@ -26,6 +26,8 @@ type AppRow = {
   candidateId: string | null;
   candidateName: string | null;
   candidateSource: string | null;
+  candidateAvatarUrl: string | null;
+  offerAmount: string | null;
   jobId: string | null;
   jobTitle: string | null;
   companyName: string | null;
@@ -91,6 +93,8 @@ export default async function TodayPage() {
         "candidateId": candidate->_id,
         "candidateName": candidate->name,
         "candidateSource": candidate->source,
+        "candidateAvatarUrl": candidate->avatarUrl,
+        offerAmount,
         "jobId": job->_id,
         "jobTitle": job->title,
         "companyName": job->company->name
@@ -133,7 +137,9 @@ export default async function TodayPage() {
     return {
       candidateId: app.candidateId ?? "",
       name: app.candidateName ?? "Unknown candidate",
+      avatarUrl: app.candidateAvatarUrl,
       stage: app.stage,
+
       daysInStage: daysSince(app.stageUpdatedAt ?? app.appliedAt),
       role: app.jobTitle ?? "Untitled role",
       client: app.companyName ?? "-",
@@ -141,6 +147,7 @@ export default async function TodayPage() {
       source: app.candidateSource
         ? (SOURCE_LABELS[app.candidateSource] ?? app.candidateSource)
         : null,
+      offerAmount: app.offerAmount,
       blockedTitle: title,
       blockedBody: body,
       interviews: ivs.slice(0, 4).map((iv) => ({
@@ -180,10 +187,17 @@ export default async function TodayPage() {
       !lastDone.feedbackText &&
       daysSince(lastDone.scheduledAt) >= 2;
 
-    const base = { kind: "application" as const, name, sub, stage: app.stage, href };
+    const base = {
+      kind: "application" as const,
+      name,
+      sub,
+      stage: app.stage,
+      href,
+      avatarUrl: app.candidateAvatarUrl,
+    };
 
     if (app.stage === "offer" && d >= 5) {
-      const reason = `Offer out ${d} days with no decision logged.`;
+      const reason = `${app.offerAmount ? `${app.offerAmount} offer` : "Offer"} out ${d} days with no decision logged.`;
       overdue.push({
         ...base,
         id: app._id,
@@ -243,7 +257,7 @@ export default async function TodayPage() {
       waiting.push({
         ...base,
         id: app._id,
-        reason: "Offer out - candidate deciding.",
+        reason: `${app.offerAmount ?? "Offer"} out - candidate deciding.`,
         actionLabel: "",
         ageLabel: `${d}d`,
         ageTone: "muted",
@@ -435,9 +449,11 @@ export default async function TodayPage() {
         }
       />
 
-      <div className="mt-3 grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1fr)_296px] xl:gap-0">
+      {/* Container query: stacks when the dock (or anything) narrows the page */}
+      <div className="@container mt-3">
+      <div className="grid grid-cols-1 gap-8 @5xl:grid-cols-[minmax(0,1fr)_296px] @5xl:gap-0">
         {/* ── The queue ── */}
-        <div className="min-w-0 xl:pr-6">
+        <div className="min-w-0 @5xl:pr-6">
           {needAction === 0 ? (
             <div className="border-t px-1 py-14">
               <p className="text-[15px] font-semibold">Nothing is overdue.</p>
@@ -487,7 +503,7 @@ export default async function TodayPage() {
         </div>
 
         {/* ── Right rail: the desk's vitals ── */}
-        <aside className="xl:border-l xl:pl-6">
+        <aside className="@5xl:border-l @5xl:pl-6">
           <div className="border-b pb-5">
             <p className="text-muted-foreground font-mono text-[10px] tracking-[0.14em] uppercase">
               Pipeline
@@ -631,6 +647,7 @@ export default async function TodayPage() {
             </div>
           </div>
         </aside>
+      </div>
       </div>
     </div>
   );

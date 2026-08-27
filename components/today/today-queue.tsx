@@ -20,12 +20,14 @@ export type PeekInterview = {
 export type PeekData = {
   candidateId: string;
   name: string;
+  avatarUrl?: string | null;
   stage: Stage;
   daysInStage: number;
   role: string;
   client: string;
   daysInPipeline: number;
   source: string | null;
+  offerAmount?: string | null;
   blockedTitle: string | null;
   blockedBody: string | null;
   interviews: PeekInterview[];
@@ -35,6 +37,7 @@ export type QueueItem = {
   id: string;
   kind: "application" | "job" | "ai";
   name: string;
+  avatarUrl?: string | null;
   sub: string;
   stage: Stage | null;
   reason: string;
@@ -94,7 +97,7 @@ function Peek({
     >
       {/* Header */}
       <div className="flex shrink-0 items-center gap-2.5 border-b px-4 py-3">
-        <InitialsChip name={peek.name} size="sm" />
+        <InitialsChip name={peek.name} src={peek.avatarUrl} size="sm" />
         <Link
           href={`/dashboard/candidates/${peek.candidateId}`}
           className="text-sm font-semibold hover:underline"
@@ -198,6 +201,9 @@ function Peek({
             { label: "Client", value: peek.client },
             { label: "In pipeline", value: `${peek.daysInPipeline} days`, mono: true },
             { label: "Source", value: peek.source ?? "-" },
+            ...(peek.offerAmount
+              ? [{ label: "Offer", value: peek.offerAmount, mono: true, offer: true }]
+              : []),
           ].map((fact) => (
             <div key={fact.label}>
               <p className="text-muted-foreground text-[11px]">{fact.label}</p>
@@ -205,6 +211,7 @@ function Peek({
                 className={cn(
                   "mt-0.5 text-[12.5px] font-medium",
                   fact.mono && "font-mono font-normal tabular-nums",
+                  "offer" in fact && fact.offer && "text-stage-offer font-medium",
                 )}
               >
                 {fact.value}
@@ -345,7 +352,7 @@ export function TodayQueue({
                     <Sparkles className="size-3" />
                   </span>
                 ) : (
-                  <InitialsChip name={item.name} size="sm" />
+                  <InitialsChip name={item.name} src={item.avatarUrl} size="sm" />
                 )}
                 <div className="w-[200px] min-w-0 shrink-0">
                   <p className="truncate text-[13px] font-medium">{item.name}</p>

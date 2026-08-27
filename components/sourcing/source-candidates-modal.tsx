@@ -46,7 +46,7 @@ function MatchRow({
           style={{ width: `${candidate.pct}%` }}
         />
       </div>
-      <InitialsChip name={candidate.name} size="sm" />
+      <InitialsChip name={candidate.name} src={candidate.avatarUrl} size="sm" />
       <div className="min-w-0 flex-1">
         <Link
           href={`/dashboard/candidates/${candidate._id}`}

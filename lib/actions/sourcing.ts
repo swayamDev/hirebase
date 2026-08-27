@@ -7,6 +7,7 @@ export type SourcedCandidate = {
   _id: string;
   name: string;
   headline: string | null;
+  avatarUrl: string | null;
   skills: string[] | null;
   pct: number;
 };
@@ -22,7 +23,7 @@ const SCORED_QUERY = `*[
   archived != true &&
   count(*[_type == "application" && orgId == $orgId && job._ref == $jobId && candidate._ref == ^._id]) == 0
 ] | score(text::semanticSimilarity($queryText)) | order(_score desc) [0...30] {
-  _id, name, headline, skills, _score
+  _id, name, headline, avatarUrl, skills, _score
 }`;
 
 /**

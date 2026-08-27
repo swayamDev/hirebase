@@ -54,6 +54,24 @@ export const application = defineType({
       type: "datetime",
       validation: (rule) => rule.required(),
     }),
+    defineField({
+      name: "offerAmount",
+      title: "Offer amount",
+      type: "string",
+      description: "Free text (e.g. £68,000) so currency and format stay the agency's",
+    }),
+    defineField({
+      name: "offerSentAt",
+      title: "Offer sent at",
+      type: "datetime",
+    }),
+    defineField({
+      name: "offerNote",
+      title: "Offer note",
+      type: "text",
+      rows: 2,
+      description: "Terms, deadline, competing offers - anything the client should know",
+    }),
   ],
   preview: {
     select: { candidate: "candidate.name", job: "job.title", stage: "stage" },

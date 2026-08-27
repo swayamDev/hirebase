@@ -1,17 +1,14 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { clerkMiddleware } from "@clerk/nextjs/server";
 
-const isPublicRoute = createRouteMatcher([
-  "/",
-  "/sign-in(.*)",
-  "/sign-up(.*)",
-  "/api/webhooks(.*)",
-  // The Studio guards itself: sanity.io login + Sanity project membership.
-  "/studio(.*)",
-]);
-
-export default clerkMiddleware(async (auth, req) => {
-  if (!isPublicRoute(req)) await auth.protect();
-});
+/**
+ * Resource-based auth (createRouteMatcher is deprecated): the middleware only
+ * attaches Clerk's auth context. Every protected resource checks for itself -
+ * dashboard pages/layout via requireOrg() (lib/tenant.ts), /onboarding inline,
+ * /api/agent returns 401/403, and all Server Actions go through requireOrg +
+ * assertOwned. Public by design: /, /sign-in, /sign-up, /api/webhooks (svix
+ * verification), and /studio (Sanity's own login + project membership).
+ */
+export default clerkMiddleware();
 
 export const config = {
   matcher: [

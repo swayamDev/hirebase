@@ -1,7 +1,10 @@
 import { OrganizationProfile } from "@clerk/nextjs";
 import { PageHeader } from "@/components/shell/panels";
+import { requireOrg } from "@/lib/tenant";
 
-export default function TeamPage() {
+export default async function TeamPage() {
+  await requireOrg();
+
   return (
     <div className="flex flex-col gap-6 pb-4">
       <PageHeader

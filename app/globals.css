@@ -263,3 +263,20 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .animate-float, .animate-float-delay { animation: none; }
 }
+
+/* Ask Hirebase dock (Ask Widget design) */
+@keyframes hirebase-sweep {
+  0% { opacity: 0; transform: translateX(-60%); }
+  40% { opacity: 0.9; }
+  100% { opacity: 0; transform: translateX(60%); }
+}
+.animate-hirebase-sweep { animation: hirebase-sweep 1.8s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .animate-hirebase-sweep { animation: none; }
+}
+
+/* Ask Hirebase expanded: the dock becomes a right sidebar and the app shifts in */
+[data-slot="sidebar-inset"] { transition: margin-right 300ms ease; }
+@media (min-width: 768px) {
+  body[data-hirebase-expanded] [data-slot="sidebar-inset"] { margin-right: 428px; }
+}

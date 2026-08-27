@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createCompany } from "@/lib/actions/companies";
 import { CompanyForm } from "@/components/companies/company-form";
 import { PageHeader, Section } from "@/components/shell/panels";
+import { requireOrg } from "@/lib/tenant";
 
 async function createCompanyAndReturn(formData: FormData) {
   "use server";
@@ -11,7 +12,9 @@ async function createCompanyAndReturn(formData: FormData) {
   redirect("/dashboard/companies");
 }
 
-export default function NewCompanyPage() {
+export default async function NewCompanyPage() {
+  await requireOrg();
+
   return (
     <div className="flex flex-col pb-6">
       <Link

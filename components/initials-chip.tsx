@@ -21,16 +21,39 @@ function hueFor(name: string): (typeof HUES)[number] {
   return HUES[hueIndexFor(name)];
 }
 
-/** Deterministic initials avatar - identity at a glance in lists and boards. */
+/**
+ * Deterministic initials avatar - identity at a glance in lists and boards.
+ * Given a `src`, renders the photo instead (same shape and sizes).
+ */
 export function InitialsChip({
   name,
+  src,
   size = "md",
   className,
 }: {
   name: string;
+  src?: string | null;
   size?: "sm" | "md" | "lg";
   className?: string;
 }) {
+  if (src) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src}
+        alt=""
+        aria-hidden
+        loading="lazy"
+        className={cn(
+          "shrink-0 rounded-full object-cover",
+          size === "sm" && "size-6",
+          size === "md" && "size-8",
+          size === "lg" && "size-11",
+          className,
+        )}
+      />
+    );
+  }
   const initials = name
     .split(/\s+/)
     .filter(Boolean)

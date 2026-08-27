@@ -31,10 +31,14 @@ export function KanbanBoard({
   initialApplications,
   jobId,
   readOnly = false,
+  lanes = STAGES,
 }: {
   initialApplications: BoardApplication[];
-  jobId: string;
+  /** Set on a job's own board; the global pipeline omits it. */
+  jobId?: string;
   readOnly?: boolean;
+  /** Stages rendered as columns - the global pipeline folds closed work away. */
+  lanes?: readonly Stage[];
 }) {
   const router = useRouter();
   const suppressClickRef = useRef(false);
@@ -191,8 +195,13 @@ export function KanbanBoard({
           releaseClickSuppression();
         }}
       >
-        <div className="grid flex-1 auto-rows-fr grid-cols-2 gap-3 overflow-hidden pb-2 md:grid-cols-3 lg:grid-cols-6">
-          {STAGES.map((stage) => (
+        <div
+          className={cn(
+            "grid flex-1 auto-rows-fr grid-cols-2 gap-3 overflow-hidden pb-2 md:grid-cols-3",
+            lanes.length <= 4 ? "lg:grid-cols-4" : "lg:grid-cols-6",
+          )}
+        >
+          {lanes.map((stage) => (
             <KanbanColumn
               key={stage}
               stage={stage}

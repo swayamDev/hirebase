@@ -13,6 +13,11 @@ export type BoardApplication = {
   candidateId: string | null;
   candidateName: string | null;
   candidateHeadline: string | null;
+  candidateAvatarUrl?: string | null;
+  /** Embedding match vs the role's brief, relative to this board's pool. Pro-only. */
+  matchPct?: number | null;
+  /** The offer figure, once one is out. */
+  offerAmount?: string | null;
 };
 
 function daysInStage(stageUpdatedAt: string): number {
@@ -47,15 +52,33 @@ export function KanbanCardContent({
       <div className="flex items-center gap-2">
         <InitialsChip
           name={application.candidateName ?? "Unknown candidate"}
+          src={application.candidateAvatarUrl}
           size="sm"
         />
-        <p className="min-w-0 truncate text-[13px] leading-tight font-medium">
+        <p className="min-w-0 flex-1 truncate text-[13px] leading-tight font-medium">
           {application.candidateName ?? "Unknown candidate"}
         </p>
+        {typeof application.matchPct === "number" ? (
+          <span
+            className="text-ai shrink-0 font-mono text-[11px] font-medium tabular-nums"
+            title="Match vs the role's brief, relative to this board"
+          >
+            {application.matchPct}%
+          </span>
+        ) : null}
       </div>
       {application.candidateHeadline ? (
         <p className="text-muted-foreground mt-1.5 truncate text-xs">
           {application.candidateHeadline}
+        </p>
+      ) : null}
+      {application.offerAmount ? (
+        <p className="text-stage-offer mt-1.5 font-mono text-xs font-medium tabular-nums">
+          {application.offerAmount}
+          <span className="text-stage-offer/70 font-sans font-normal">
+            {" "}
+            {application.stage === "hired" ? "accepted" : "offered"}
+          </span>
         </p>
       ) : null}
       <div className="mt-2.5 flex items-center justify-between gap-2">

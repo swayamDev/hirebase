@@ -7,7 +7,8 @@ import { archiveCandidate } from "@/lib/actions/candidates";
 import { type Stage } from "@/sanity/schemas/stages";
 import { StagePill } from "@/components/stage-rail";
 import { InitialsChip } from "@/components/initials-chip";
-import { LogInterviewForm } from "@/components/candidates/log-interview-form";
+import { LogInterviewModal } from "@/components/candidates/log-interview-form";
+import { RecordOfferDialog } from "@/components/offers/record-offer-dialog";
 import { Section, FieldRow } from "@/components/shell/panels";
 import { SubmitButton } from "@/components/submit-button";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +20,7 @@ type CandidateDoc = {
   name: string;
   email?: string;
   headline?: string;
+  avatarUrl?: string;
   skills?: string[];
   cvText?: string;
   source?: string;
@@ -30,7 +32,16 @@ type ApplicationRow = {
   _id: string;
   stage: Stage;
   appliedAt: string;
-  job: { _id: string; title: string; orgId: string } | null;
+  stageUpdatedAt: string | null;
+  offerAmount: string | null;
+  offerSentAt: string | null;
+  offerNote: string | null;
+  job: {
+    _id: string;
+    title: string;
+    orgId: string;
+    companyName: string | null;
+  } | null;
 };
 
 type InterviewRow = {
@@ -81,6 +92,14 @@ function formatDateTime(iso: string) {
   });
 }
 
+/** Whole days an application has sat in its current stage. */
+function daysInStage(iso: string) {
+  return Math.max(
+    0,
+    Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000),
+  );
+}
+
 /** "3d ago"-style relative time from an ISO string. */
 function timeAgo(iso: string) {
   const minutes = Math.max(
@@ -107,15 +126,16 @@ export default async function CandidatePage({
   const [candidate, applications, interviews] = await Promise.all([
     readClient.fetch<CandidateDoc | null>(
       `*[_type == "candidate" && _id == $id && orgId == $orgId][0]{
-        _id, name, email, headline, skills, cvText, source, archived, createdAt
+        _id, name, email, headline, avatarUrl, skills, cvText, source, archived, createdAt
       }`,
       { id, orgId },
     ),
     readClient.fetch<ApplicationRow[]>(
       `*[_type == "application" && orgId == $orgId && candidate._ref == $id]
         | order(appliedAt desc){
-          _id, stage, appliedAt,
-          "job": job->{ _id, title, orgId }
+          _id, stage, appliedAt, stageUpdatedAt,
+          offerAmount, offerSentAt, offerNote,
+          "job": job->{ _id, title, orgId, "companyName": company->name }
         }`,
       { id, orgId },
     ),
@@ -147,7 +167,12 @@ export default async function CandidatePage({
       {/* Flat record header - no card box */}
       <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
         <div className="flex min-w-0 items-start gap-4">
-          <InitialsChip name={candidate.name} size="lg" className="mt-1" />
+          <InitialsChip
+            name={candidate.name}
+            src={candidate.avatarUrl}
+            size="lg"
+            className="mt-1"
+          />
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2.5">
               <h1 className="text-lg font-semibold tracking-tight sm:text-xl">
@@ -187,9 +212,15 @@ export default async function CandidatePage({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
+          <LogInterviewModal
+            candidateId={candidate._id}
+            applications={ownedApplications.map((application) => ({
+              id: application._id,
+              jobTitle: application.job!.title,
+            }))}
+          />
           <Button
             variant="outline"
-            size="sm"
             nativeButton={false}
             render={<Link href={`/dashboard/candidates/${candidate._id}/edit`} />}
           >
@@ -197,9 +228,7 @@ export default async function CandidatePage({
           </Button>
           {!candidate.archived && (
             <form action={archiveCandidate.bind(null, candidate._id)}>
-              <SubmitButton variant="outline" size="sm">
-                Archive candidate
-              </SubmitButton>
+              <SubmitButton variant="outline">Archive</SubmitButton>
             </form>
           )}
         </div>
@@ -220,7 +249,87 @@ export default async function CandidatePage({
       <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_300px]">
         {/* Main zone */}
         <div className="min-w-0">
-          <Section title="Profile">
+          {/* Applications lead the record - where this person is, right now */}
+          <Section title="Applications" count={ownedApplications.length}>
+            {ownedApplications.length === 0 ? (
+              <p className="text-muted-foreground border-t py-4 text-[13px]">
+                Not in any pipeline yet - add them to a role from the job page.
+              </p>
+            ) : (
+              <div className="divide-y border-t">
+                {ownedApplications.map((application) => {
+                  const inStage = daysInStage(
+                    application.stageUpdatedAt ?? application.appliedAt,
+                  );
+                  return (
+                    <div
+                      key={application._id}
+                      className="hover:bg-muted/40 relative flex cursor-pointer items-center gap-3 py-3 transition-colors"
+                    >
+                      <InitialsChip
+                        name={
+                          application.job!.companyName ?? application.job!.title
+                        }
+                        size="sm"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <Link
+                          href={`/dashboard/jobs/${application.job!._id}`}
+                          className="block truncate text-[13px] font-medium hover:underline after:absolute after:inset-0"
+                        >
+                          {application.job!.title}
+                        </Link>
+                        <p className="text-muted-foreground truncate text-xs">
+                          {application.job!.companyName ?? "-"}
+                          <span className="text-muted-foreground/50"> · </span>
+                          applied {timeAgo(application.appliedAt)}
+                          {application.offerAmount ? (
+                            <>
+                              <span className="text-muted-foreground/50"> · </span>
+                              <span className="text-stage-offer font-mono font-medium tabular-nums">
+                                {application.offerAmount}
+                              </span>{" "}
+                              {application.stage === "hired"
+                                ? "accepted"
+                                : `offered${application.offerSentAt ? ` ${timeAgo(application.offerSentAt)}` : ""}`}
+                            </>
+                          ) : null}
+                        </p>
+                      </div>
+                      {["interviewing", "offer", "hired"].includes(
+                        application.stage,
+                      ) ? (
+                        <RecordOfferDialog
+                          applicationId={application._id}
+                          candidateName={candidate.name}
+                          existingAmount={application.offerAmount}
+                          existingNote={application.offerNote}
+                        />
+                      ) : null}
+                      <StagePill
+                        stage={application.stage}
+                        className="shrink-0"
+                      />
+                      <span
+                        className={cn(
+                          "w-20 shrink-0 text-right font-mono text-xs tabular-nums",
+                          inStage > 14 &&
+                            application.stage !== "hired" &&
+                            application.stage !== "rejected"
+                            ? "text-stage-offer"
+                            : "text-muted-foreground",
+                        )}
+                      >
+                        {inStage}d in stage
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </Section>
+
+          <Section title="Profile" className="mt-8">
             {candidate.cvText ? (
               <div className="max-h-96 overflow-y-auto text-sm leading-relaxed whitespace-pre-wrap">
                 {candidate.cvText}
@@ -279,15 +388,6 @@ export default async function CandidatePage({
             )}
           </Section>
 
-          <div className="mt-8">
-            <LogInterviewForm
-              candidateId={candidate._id}
-              applications={ownedApplications.map((application) => ({
-                id: application._id,
-                jobTitle: application.job!.title,
-              }))}
-            />
-          </div>
         </div>
 
         {/* Details rail */}
@@ -319,42 +419,6 @@ export default async function CandidatePage({
             </FieldRow>
           </Section>
 
-          <Section
-            title="Applications"
-            count={ownedApplications.length}
-            className="mt-8"
-          >
-            {ownedApplications.length === 0 ? (
-              <p className="text-muted-foreground py-4 text-[13px]">
-                No applications yet - add this candidate to a job from the job
-                page.
-              </p>
-            ) : (
-              <div className="divide-y border-t">
-                {ownedApplications.map((application) => (
-                  <div
-                    key={application._id}
-                    className="hover:bg-muted/40 relative cursor-pointer py-2.5 transition-colors"
-                  >
-                    <div className="flex items-baseline justify-between gap-3">
-                      <Link
-                        href={`/dashboard/jobs/${application.job!._id}`}
-                        className="min-w-0 truncate text-[13px] font-medium hover:underline after:absolute after:inset-0"
-                      >
-                        {application.job!.title}
-                      </Link>
-                      <span className="text-muted-foreground shrink-0 font-mono text-xs tabular-nums">
-                        {timeAgo(application.appliedAt)}
-                      </span>
-                    </div>
-                    <div className="mt-1.5">
-                      <StagePill stage={application.stage} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Section>
         </div>
       </div>
     </div>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   Briefcase,
   Building2,
+  Columns3,
   CreditCard,
   LayoutDashboard,
   Plus,
@@ -26,13 +27,19 @@ import {
 import { InitialsChip } from "@/components/initials-chip";
 
 export type CommandEntities = {
-  candidates: { _id: string; name: string; headline: string | null }[];
+  candidates: {
+    _id: string;
+    name: string;
+    headline: string | null;
+    avatarUrl: string | null;
+  }[];
   jobs: { _id: string; title: string; companyName: string | null }[];
   companies: { _id: string; name: string }[];
 };
 
 const NAV = [
   { href: "/dashboard", label: "Today", icon: LayoutDashboard },
+  { href: "/dashboard/pipeline", label: "Pipeline", icon: Columns3 },
   { href: "/dashboard/companies", label: "Companies", icon: Building2 },
   { href: "/dashboard/jobs", label: "Jobs", icon: Briefcase },
   { href: "/dashboard/candidates", label: "Candidates", icon: Users },
@@ -71,7 +78,7 @@ export function CommandMenu({ entities }: { entities: CommandEntities }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground mx-2 mb-1 flex h-[30px] cursor-pointer items-center gap-2.5 rounded-md px-2.5 text-[13px] transition-colors"
+        className="text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground mb-1 flex h-[30px] w-full cursor-pointer items-center gap-2.5 rounded-md px-2.5 text-[13px] transition-colors"
       >
         <Search className="size-4 shrink-0 opacity-70" />
         Search
@@ -93,7 +100,11 @@ export function CommandMenu({ entities }: { entities: CommandEntities }) {
                 value={`candidate ${candidate.name} ${candidate.headline ?? ""}`}
                 onSelect={() => go(`/dashboard/candidates/${candidate._id}`)}
               >
-                <InitialsChip name={candidate.name} size="sm" />
+                <InitialsChip
+                  name={candidate.name}
+                  src={candidate.avatarUrl}
+                  size="sm"
+                />
                 <span className="shrink-0 font-medium">{candidate.name}</span>
                 {candidate.headline ? (
                   <CommandShortcut className="min-w-0 shrink truncate pl-6 tracking-normal">

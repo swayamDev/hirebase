@@ -13,6 +13,7 @@ type CandidateRow = {
   _id: string;
   name: string;
   headline?: string;
+  avatarUrl?: string | null;
   skills?: string[];
   source?: string;
   createdAt: string;
@@ -56,9 +57,9 @@ export default async function CandidatesPage({
   const allCandidates = await readClient.fetch<CandidateRow[]>(
     q
       ? `*[_type == "candidate" && orgId == $orgId && archived != true && name match $q + "*"]
-          | order(createdAt desc){ _id, name, headline, skills, source, createdAt }`
+          | order(createdAt desc){ _id, name, headline, avatarUrl, skills, source, createdAt }`
       : `*[_type == "candidate" && orgId == $orgId && archived != true]
-          | order(createdAt desc){ _id, name, headline, skills, source, createdAt }`,
+          | order(createdAt desc){ _id, name, headline, avatarUrl, skills, source, createdAt }`,
     q ? { orgId, q } : { orgId },
   );
 
@@ -177,7 +178,11 @@ export default async function CandidatesPage({
                 key={candidate._id}
                 className="hover:bg-muted/40 relative flex cursor-pointer items-center gap-3 py-2.5 text-[13px] transition-colors"
               >
-                <InitialsChip name={candidate.name} size="md" />
+                <InitialsChip
+                  name={candidate.name}
+                  src={candidate.avatarUrl}
+                  size="md"
+                />
                 <div className="min-w-0 flex-1">
                   <Link
                     href={`/dashboard/candidates/${candidate._id}`}

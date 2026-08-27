@@ -2,8 +2,11 @@ import Link from "next/link";
 import { ArrowLeft, Sparkles } from "lucide-react";
 import { CandidateForm } from "@/components/candidates/candidate-form";
 import { PageHeader } from "@/components/shell/panels";
+import { requireOrg } from "@/lib/tenant";
 
-export default function NewCandidatePage() {
+export default async function NewCandidatePage() {
+  await requireOrg();
+
   return (
     <div className="flex flex-col pb-6">
       <Link

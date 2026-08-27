@@ -84,3 +84,53 @@ export async function createApplication(
   revalidatePath(`/dashboard/jobs/${jobId}`);
   return { ok: true };
 }
+
+export type RecordOfferResult = { ok: true } | { error: string };
+
+/**
+ * Record (or update) the offer on an application - the amount is the thing
+ * everyone asks about, so it lives on the record, not in chat history.
+ * Moves the application to the offer stage if it isn't there yet.
+ */
+export async function recordOffer(
+  applicationId: string,
+  input: { amount: string; note?: string },
+): Promise<RecordOfferResult> {
+  const { orgId } = await requireOrg();
+
+  try {
+    await assertOwned(applicationId, orgId);
+  } catch {
+    return { error: "That application is not in this workspace." };
+  }
+
+  const amount = input.amount.trim();
+  if (!amount) return { error: "Enter the offer amount." };
+
+  const current = await readClient.fetch<{
+    stage: Stage;
+    offerSentAt: string | null;
+  } | null>(
+    `*[_id == $id && orgId == $orgId][0]{ stage, offerSentAt }`,
+    { id: applicationId, orgId },
+  );
+  if (!current) return { error: "Application not found." };
+
+  const now = new Date().toISOString();
+  const patch: Record<string, unknown> = {
+    offerAmount: amount,
+    // First recording stamps the clock; edits keep the original send date.
+    offerSentAt: current.offerSentAt ?? now,
+  };
+  const note = input.note?.trim();
+  if (note) patch.offerNote = note;
+  if (current.stage !== "offer" && current.stage !== "hired") {
+    patch.stage = "offer" satisfies Stage;
+    patch.stageUpdatedAt = now;
+  }
+
+  await writeClient.patch(applicationId).set(patch).commit();
+
+  revalidatePath("/dashboard", "layout");
+  return { ok: true };
+}
