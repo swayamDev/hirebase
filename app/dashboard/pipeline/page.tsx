@@ -18,6 +18,7 @@ const FLOOR_QUERY = `*[
   "candidateName": candidate->name,
   "candidateAvatarUrl": candidate->avatarUrl,
   offerAmount,
+  offerNote,
   "jobTitle": job->title,
   "companyId": job->company->_id,
   "companyName": job->company->name
@@ -79,6 +80,7 @@ export default async function PipelinePage({
     candidateName: row.candidateName,
     candidateAvatarUrl: row.candidateAvatarUrl,
     offerAmount: row.offerAmount,
+    offerNote: row.offerNote,
     candidateHeadline: [row.jobTitle, row.companyName]
       .filter(Boolean)
       .join(" · "),

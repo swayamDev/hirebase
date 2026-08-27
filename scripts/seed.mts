@@ -1609,11 +1609,38 @@ function buildDocs(): SeedDoc[] {
   }));
 
   // Deterministic offer figure per application - stable across reseeds.
-  const offerAmountFor = (cand: number, job: string): string => {
+  const hashOf = (key: string): number => {
     let hash = 7;
-    for (const ch of `${job}.${cand}`) hash = (hash * 31 + ch.charCodeAt(0)) | 0;
-    const thousands = 55 + (Math.abs(hash) % 41); // £55k–£95k band
+    for (const ch of key) hash = (hash * 31 + ch.charCodeAt(0)) | 0;
+    return Math.abs(hash);
+  };
+
+  const offerAmountFor = (cand: number, job: string): string => {
+    const thousands = 55 + (hashOf(`${job}.${cand}`) % 41); // £55k–£95k band
     return `£${thousands},000`;
+  };
+
+  // The note a recruiter actually leaves next to a figure: what is still open,
+  // what was conceded, who is waiting on whom. Deterministic per application.
+  const OFFER_NOTES = [
+    "Base only - the client has room on equity if they push back.",
+    "Matched their current base plus 9%. Start date still to agree.",
+    "Verbal out Friday; written contract follows once HR sign off.",
+    "They asked for a 4-day week - client said no, so this is base-heavy.",
+    "Includes the £5k sign-on we negotiated to cover their lost bonus.",
+    "Second offer on the table elsewhere - expect a counter this week.",
+    "Client stretched past band for this one. Do not set a precedent.",
+    "Relocation package agreed separately, not reflected in the figure.",
+  ];
+  const HIRED_NOTES = [
+    "Accepted same day. Starts in four weeks once they work notice.",
+    "Accepted after we moved the start date back a fortnight.",
+    "Signed. Client wants them on the payments team from day one.",
+    "Accepted the revised figure - they were counter-offered and stayed with us.",
+  ];
+  const offerNoteFor = (cand: number, job: string, hired: boolean): string => {
+    const pool = hired ? HIRED_NOTES : OFFER_NOTES;
+    return pool[hashOf(`note.${job}.${cand}`) % pool.length];
   };
 
   const applicationDocs: SeedDoc[] = applications.map(([cand, job, stage, appliedDays, stageDays]) => ({
@@ -1631,7 +1658,14 @@ function buildDocs(): SeedDoc[] {
     ...(stage === "offer" || stage === "hired"
       ? {
           offerAmount: offerAmountFor(cand, job),
-          offerSentAt: daysAgo(stageDays),
+          // Hired offers went out before they were accepted, so back-date the
+          // send a little - but never past the day they applied.
+          offerSentAt: daysAgo(
+            stage === "hired"
+              ? Math.min(stageDays + 3, appliedDays)
+              : stageDays,
+          ),
+          offerNote: offerNoteFor(cand, job, stage === "hired"),
         }
       : {}),
   }));

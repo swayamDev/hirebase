@@ -3,6 +3,7 @@
 import { useDraggable } from "@dnd-kit/core";
 import { type Stage } from "@/sanity/schemas/stages";
 import { InitialsChip } from "@/components/initials-chip";
+import { RecordOfferDialog } from "@/components/offers/record-offer-dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +19,8 @@ export type BoardApplication = {
   matchPct?: number | null;
   /** The offer figure, once one is out. */
   offerAmount?: string | null;
+  /** The note that went with the offer - so editing from a board keeps it. */
+  offerNote?: string | null;
 };
 
 function daysInStage(stageUpdatedAt: string): number {
@@ -30,11 +33,14 @@ export function KanbanCardContent({
   application,
   dragging = false,
   pending = false,
+  action = null,
 }: {
   application: BoardApplication;
   dragging?: boolean;
   /** The card's stage move is still committing on the server. */
   pending?: boolean;
+  /** Interactive footer control. Omitted in the DragOverlay copy. */
+  action?: React.ReactNode;
 }) {
   const days = daysInStage(application.stageUpdatedAt);
   const stale =
@@ -81,6 +87,7 @@ export function KanbanCardContent({
           </span>
         </p>
       ) : null}
+      {action ? <div className="mt-2">{action}</div> : null}
       <div className="mt-2.5 flex items-center justify-between gap-2">
         {pending ? (
           <span className="text-muted-foreground inline-flex items-center gap-1 text-[11px]">
@@ -126,19 +133,50 @@ export function KanbanCard({
     disabled: readOnly,
   });
 
+  // Recording the offer belongs where you drag someone into Offer - not three
+  // clicks away on their record.
+  const offerable =
+    !readOnly &&
+    (application.stage === "offer" || application.stage === "hired");
+
   return (
     <div
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      onClick={() => onOpen?.(application)}
+      onClick={(e) => {
+        // Base UI's dialog trigger manages its own click, so don't rely on
+        // propagation alone - never open the record from a card control.
+        if ((e.target as HTMLElement).closest("[data-card-action]")) return;
+        onOpen?.(application);
+      }}
       className={cn(
         "cursor-pointer",
         !readOnly && "touch-none",
         isDragging && "opacity-40",
       )}
     >
-      <KanbanCardContent application={application} pending={pending} />
+      <KanbanCardContent
+        application={application}
+        pending={pending}
+        action={
+          offerable ? (
+            // The card is both a drag handle and a click-to-open target, so the
+            // dialog's own events must not reach either.
+            <div
+              data-card-action
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              <RecordOfferDialog
+                applicationId={application._id}
+                candidateName={application.candidateName ?? "this candidate"}
+                existingAmount={application.offerAmount}
+                existingNote={application.offerNote}
+              />
+            </div>
+          ) : null
+        }
+      />
     </div>
   );
 }

@@ -57,7 +57,8 @@ const APPLICATIONS_QUERY = `*[_type == "application" && orgId == $orgId && job._
   "candidateName": candidate->name,
   "candidateHeadline": candidate->headline,
   "candidateAvatarUrl": candidate->avatarUrl,
-  offerAmount
+  offerAmount,
+  offerNote
 }`;
 
 const AVAILABLE_CANDIDATES_QUERY = `*[
