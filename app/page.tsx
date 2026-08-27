@@ -482,14 +482,14 @@ export default async function LandingPage() {
             <h2 className="font-display text-3xl font-semibold tracking-[-0.02em]">Pricing that scales with your desk</h2>
             <p className="text-muted-foreground mt-2 max-w-md text-sm">Per agency workspace. Seats enforced automatically.</p>
           </Reveal>
-          <div className="mt-10 grid items-start gap-5 md:grid-cols-3">
+          <div className="mt-10 grid gap-5 md:grid-cols-3">
             {PLANS.map((plan, i) => {
               const highlight = "highlight" in plan && plan.highlight;
               return (
-                <Reveal key={plan.name} delay={i * 120}>
+                <Reveal key={plan.name} delay={i * 120} className="h-full">
                   <div
                     className={cn(
-                      "bg-card relative rounded-2xl border p-7",
+                      "bg-card relative flex h-full flex-col rounded-2xl border p-7",
                       highlight
                         ? "border-[#EE5A0E]/40 shadow-[0_0_50px_-12px_rgba(238,90,14,0.45)] md:-mt-4"
                         : "shadow-xs",
@@ -514,7 +514,7 @@ export default async function LandingPage() {
                     <p className="text-muted-foreground mt-1 text-sm">
                       {plan.blurb}
                     </p>
-                    <ul className="mt-5 space-y-2 text-sm">
+                    <ul className="mt-5 mb-6 space-y-2 text-sm">
                       {plan.features.map((feature) => (
                         <li key={feature} className="flex gap-2.5">
                           <span
@@ -529,7 +529,7 @@ export default async function LandingPage() {
                     </ul>
                     <Button
                       className={cn(
-                        "mt-6 w-full",
+                        "mt-auto w-full",
                         highlight &&
                           "bg-[#EE5A0E] text-white hover:bg-[#D14E0A]",
                       )}
