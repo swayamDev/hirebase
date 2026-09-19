@@ -5,7 +5,11 @@ import { createCompany } from "@/lib/actions/companies";
 import { CompanyForm } from "@/components/companies/company-form";
 import { PageHeader, Section } from "@/components/shell/panels";
 import { requireOrg } from "@/lib/tenant";
+import type { Metadata } from "next";
 
+export const metadata: Metadata = {
+  title: "New company",
+};
 async function createCompanyAndReturn(formData: FormData) {
   "use server";
   await createCompany(formData);

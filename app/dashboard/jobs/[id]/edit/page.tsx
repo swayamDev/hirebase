@@ -8,7 +8,11 @@ import { JobForm } from "@/components/kanban/job-form";
 import { StageMixBar } from "@/components/stage-mix-bar";
 import { Section } from "@/components/shell/panels";
 import type { Stage } from "@/sanity/schemas/stages";
+import type { Metadata } from "next";
 
+export const metadata: Metadata = {
+  title: "Edit job",
+};
 type JobEditDetail = {
   _id: string;
   title: string;

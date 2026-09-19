@@ -6,7 +6,11 @@ import { readClient } from "@/lib/sanity/client";
 import { InitialsChip } from "@/components/initials-chip";
 import { EditCompanyForm } from "@/components/companies/edit-company-form";
 import { Section } from "@/components/shell/panels";
+import type { Metadata } from "next";
 
+export const metadata: Metadata = {
+  title: "Edit company",
+};
 type CompanyDoc = {
   _id: string;
   name: string;

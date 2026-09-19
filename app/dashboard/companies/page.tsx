@@ -7,7 +7,11 @@ import { LedgerRows, type LedgerRow } from "@/components/ledger/ledger-rows";
 import { AskButton } from "@/components/today/ask-assistant";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import type { Metadata } from "next";
 
+export const metadata: Metadata = {
+  title: "Companies",
+};
 const DAY = 86_400_000;
 
 type AppRow = {

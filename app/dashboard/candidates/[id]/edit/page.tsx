@@ -7,7 +7,11 @@ import { updateCandidate } from "@/lib/actions/candidates";
 import { InitialsChip } from "@/components/initials-chip";
 import { CandidateForm } from "@/components/candidates/candidate-form";
 import { Section } from "@/components/shell/panels";
+import type { Metadata } from "next";
 
+export const metadata: Metadata = {
+  title: "Edit candidate",
+};
 type CandidateDoc = {
   _id: string;
   name: string;

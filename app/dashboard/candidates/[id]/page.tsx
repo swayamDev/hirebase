@@ -14,7 +14,11 @@ import { SubmitButton } from "@/components/submit-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import type { Metadata } from "next";
 
+export const metadata: Metadata = {
+  title: "Candidate",
+};
 type CandidateDoc = {
   _id: string;
   name: string;

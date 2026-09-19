@@ -1,6 +1,12 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { CreateOrganization } from "@clerk/nextjs";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Set up your workspace",
+  robots: { index: false, follow: false },
+};
 
 export default async function OnboardingPage() {
   const { userId, orgId } = await auth();

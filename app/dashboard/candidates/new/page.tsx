@@ -3,7 +3,11 @@ import { ArrowLeft, Sparkles } from "lucide-react";
 import { CandidateForm } from "@/components/candidates/candidate-form";
 import { PageHeader } from "@/components/shell/panels";
 import { requireOrg } from "@/lib/tenant";
+import type { Metadata } from "next";
 
+export const metadata: Metadata = {
+  title: "New candidate",
+};
 export default async function NewCandidatePage() {
   await requireOrg();
 

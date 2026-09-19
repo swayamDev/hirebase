@@ -1,7 +1,11 @@
 import { OrganizationProfile } from "@clerk/nextjs";
 import { PageHeader } from "@/components/shell/panels";
 import { requireOrg } from "@/lib/tenant";
+import type { Metadata } from "next";
 
+export const metadata: Metadata = {
+  title: "Organization settings",
+};
 export default async function TeamPage() {
   await requireOrg();
 

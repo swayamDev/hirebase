@@ -5,7 +5,11 @@ import { FilterChips, FilterSelect } from "@/components/filter-chips";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { type BoardApplication } from "@/components/kanban/kanban-card";
 import { PageHeader } from "@/components/shell/panels";
+import type { Metadata } from "next";
 
+export const metadata: Metadata = {
+  title: "Pipeline",
+};
 /** The whole desk on one board - every live application across every client. */
 const FLOOR_QUERY = `*[
   _type == "application" && orgId == $orgId &&

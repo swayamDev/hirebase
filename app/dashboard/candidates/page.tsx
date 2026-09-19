@@ -8,7 +8,11 @@ import { PageHeader } from "@/components/shell/panels";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import type { Metadata } from "next";
 
+export const metadata: Metadata = {
+  title: "Candidates",
+};
 type CandidateRow = {
   _id: string;
   name: string;

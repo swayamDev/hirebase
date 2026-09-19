@@ -3,7 +3,11 @@ import { fetchOrgPlans } from "@/lib/billing";
 import { PricingCards } from "@/components/billing/pricing-cards";
 import { PageHeader } from "@/components/shell/panels";
 import { Badge } from "@/components/ui/badge";
+import type { Metadata } from "next";
 
+export const metadata: Metadata = {
+  title: "Billing",
+};
 export default async function BillingPage() {
   const { has } = await requireOrg();
 

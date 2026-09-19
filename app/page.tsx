@@ -149,12 +149,62 @@ function SourcingVisual() {
 
 /* ── Page ── */
 
+import type { Metadata } from "next";
+
+const SITE_URL = "https://hire.swayam.space";
+
+export const metadata: Metadata = {
+  title: "AI-native CRM for recruitment agencies",
+  description:
+    "Hirebase is the AI-native CRM for recruitment agencies - manage jobs, candidates, and pipelines, and let an AI Talent Agent source matches, draft offers, and answer questions about your desk.",
+  alternates: { canonical: "/" },
+  robots: { index: true, follow: true },
+  openGraph: {
+    type: "website",
+    url: SITE_URL,
+    title: "Hirebase - AI-native CRM for recruitment agencies",
+    description:
+      "Manage jobs, candidates, and pipelines, and let an AI Talent Agent source matches, draft offers, and answer questions about your desk.",
+  },
+};
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "Hirebase",
+  applicationCategory: "BusinessApplication",
+  operatingSystem: "Web",
+  url: SITE_URL,
+  description:
+    "The AI-native CRM for recruitment agencies - match talent fast with AI assistance.",
+  offers: [
+    {
+      "@type": "Offer",
+      name: "Free",
+      price: "0",
+      priceCurrency: "USD",
+    },
+    {
+      "@type": "Offer",
+      name: "Pro",
+      price: "39",
+      priceCurrency: "USD",
+    },
+  ],
+};
+
 export default async function LandingPage() {
   const { userId } = await auth();
   const cta = userId ? "/dashboard" : "/sign-up";
 
   return (
-    <main className="flex-1">
+    <>
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <main className="flex-1">
       {/* ══ SUNRISE WORLD ══ */}
       <div className="grain relative overflow-hidden bg-[#FFFBF4] text-[#231205]">
         {/* warm washes */}
@@ -602,6 +652,7 @@ export default async function LandingPage() {
           </div>
         </footer>
       </section>
-    </main>
+      </main>
+    </>
   );
 }

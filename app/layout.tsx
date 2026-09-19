@@ -22,10 +22,35 @@ const mono = JetBrains_Mono({
   subsets: ["latin"],
 });
 
+const SITE_URL = "https://hire.swayam.space";
+const SITE_NAME = "Hirebase";
+const SITE_DESCRIPTION =
+  "The AI-native CRM for recruitment agencies - match talent fast with AI assistance.";
+
 export const metadata: Metadata = {
-  title: "Hirebase",
-  description:
-    "The AI-native CRM for recruitment agencies - match talent fast with AI assistance.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: SITE_NAME,
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  // Safe-by-default: most routes in this app are authenticated dashboard
+  // pages that should never be indexed. Public marketing/auth pages opt
+  // back in explicitly with their own `robots` metadata.
+  robots: { index: false, follow: false },
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+    url: SITE_URL,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

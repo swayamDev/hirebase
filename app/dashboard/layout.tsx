@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { OrganizationSwitcher, UserButton } from "@clerk/nextjs";
 import { currentUser } from "@clerk/nextjs/server";
 import { requireOrg } from "@/lib/tenant";
@@ -12,6 +13,14 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+
+// Applies to every page under /dashboard: authenticated, per-organization
+// data that should never be indexed. Child pages set their own short
+// `title` and inherit this template and the noindex directive.
+export const metadata: Metadata = {
+  title: "Dashboard",
+  robots: { index: false, follow: false },
+};
 
 const COMMAND_ENTITIES_QUERY = `{
   "candidates": *[_type == "candidate" && orgId == $orgId && archived != true] | order(name asc) [0...100] { _id, name, headline, avatarUrl },

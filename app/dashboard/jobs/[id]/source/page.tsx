@@ -8,7 +8,11 @@ import { AddToPipelineButton } from "@/components/sourcing/add-to-pipeline-butto
 import { InitialsChip } from "@/components/initials-chip";
 import { Section } from "@/components/shell/panels";
 import { Button } from "@/components/ui/button";
+import type { Metadata } from "next";
 
+export const metadata: Metadata = {
+  title: "Source candidates",
+};
 const JOB_TITLE_QUERY = `*[_type == "job" && _id == $id && orgId == $orgId][0]{ title }`;
 
 export default async function SourceCandidatesPage({

@@ -4,7 +4,11 @@ import { requireOrg } from "@/lib/tenant";
 import { readClient } from "@/lib/sanity/client";
 import { JobForm } from "@/components/kanban/job-form";
 import { PageHeader, Section } from "@/components/shell/panels";
+import type { Metadata } from "next";
 
+export const metadata: Metadata = {
+  title: "New job",
+};
 const COMPANIES_QUERY = `*[_type == "company" && orgId == $orgId] | order(name asc) { _id, name }`;
 
 export default async function NewJobPage() {

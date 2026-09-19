@@ -1,5 +1,14 @@
 import Link from "next/link";
 import { SignUp } from "@clerk/nextjs";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Sign up",
+  description:
+    "Create your free Hirebase workspace and start managing your recruitment pipeline with AI assistance.",
+  alternates: { canonical: "/sign-up" },
+  robots: { index: true, follow: true },
+};
 
 export default function SignUpPage() {
   return (

@@ -11,7 +11,11 @@ import { StageMixBar } from "@/components/stage-mix-bar";
 import { Section, FieldRow } from "@/components/shell/panels";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import type { Metadata } from "next";
 
+export const metadata: Metadata = {
+  title: "Company",
+};
 type CompanyDoc = {
   _id: string;
   name: string;

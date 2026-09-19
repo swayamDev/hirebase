@@ -10,7 +10,11 @@ import { ViewToggle } from "@/components/view-toggle";
 import { PageHeader } from "@/components/shell/panels";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import type { Metadata } from "next";
 
+export const metadata: Metadata = {
+  title: "Jobs",
+};
 type JobCard = {
   _id: string;
   title: string;
