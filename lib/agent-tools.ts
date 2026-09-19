@@ -56,6 +56,7 @@ export function buildActionTools() {
           await createCompany(toFormData(input));
           return { ok: true, message: `Company "${input.name}" created.` };
         } catch (e) {
+          console.warn("[agent:create_company] failed", { input }, e);
           return { error: e instanceof Error ? e.message : "Could not create the company." };
         }
       },
@@ -91,7 +92,8 @@ export function buildActionTools() {
           if (status === "closed") await closeJob(jobId);
           else await reopenJob(jobId);
           return { ok: true, message: `Job is now ${status}.` };
-        } catch {
+        } catch (e) {
+          console.warn("[agent:set_job_status] failed", { jobId, status }, e);
           return { error: "That job is not in this workspace." };
         }
       },
@@ -130,7 +132,8 @@ export function buildActionTools() {
         try {
           await archiveCandidate(candidateId);
           return { ok: true, message: "Candidate archived." };
-        } catch {
+        } catch (e) {
+          console.warn("[agent:archive_candidate] failed", { candidateId }, e);
           return { error: "That candidate is not in this workspace." };
         }
       },

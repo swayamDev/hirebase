@@ -4,7 +4,7 @@ import * as React from "react";
 import { usePathname } from "next/navigation";
 import { CornerDownLeft, Sparkles } from "lucide-react";
 import { suggestionsFor } from "@/components/agent/AgentPanel";
-import { askHirebase } from "@/components/today/ask-hirebase";
+import { askHirebase } from "@/components/today/ask-assistant";
 import {
   Dialog,
   DialogContent,
@@ -158,9 +158,9 @@ export function AskHirebaseModal() {
               autoFocus
               role="combobox"
               aria-expanded="true"
-              aria-controls="ask-hirebase-suggestions"
+              aria-controls="ask-assistant-suggestions"
               aria-activedescendant={
-                highlighted >= 0 ? `ask-hirebase-option-${highlighted}` : undefined
+                highlighted >= 0 ? `ask-assistant-option-${highlighted}` : undefined
               }
               className="placeholder:text-muted-foreground/70 h-14 w-full bg-transparent text-[15px] outline-none"
             />
@@ -176,7 +176,7 @@ export function AskHirebaseModal() {
           </form>
 
           <div
-            id="ask-hirebase-suggestions"
+            id="ask-assistant-suggestions"
             role="listbox"
             aria-label="Suggested questions"
             className="flex flex-col items-start gap-1 px-3 py-3"
@@ -187,7 +187,7 @@ export function AskHirebaseModal() {
             {suggestions.map((prompt, index) => (
               <button
                 key={prompt}
-                id={`ask-hirebase-option-${index}`}
+                id={`ask-assistant-option-${index}`}
                 type="button"
                 role="option"
                 aria-selected={highlighted === index}

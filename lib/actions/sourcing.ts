@@ -41,7 +41,8 @@ export async function sourceCandidates(
 
   try {
     await assertOwned(jobId, orgId);
-  } catch {
+  } catch (e) {
+    console.warn("[sourceCandidates] ownership check failed", { jobId, orgId }, e);
     return { error: "That job is not in this workspace." };
   }
 

@@ -17,7 +17,8 @@ export default async function BillingPage() {
   let plansError = false;
   try {
     plans = await fetchOrgPlans();
-  } catch {
+  } catch (e) {
+    console.error("[billing] fetchOrgPlans failed", e);
     plansError = true;
   }
 

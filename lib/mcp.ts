@@ -35,14 +35,28 @@ export function orgScopedMcpUrl(orgId: string): string {
  * first message needs no tool call. Counts are computed under the org filter,
  * so the cache is keyed BY ORG - an unfiltered or shared fetch would leak
  * dataset-wide numbers into every tenant's prompt.
+ *
+ * Bounded LRU: without a cap, every distinct org that ever calls the agent
+ * would leave a permanent entry for the life of the process - an unbounded
+ * memory leak on a long-running instance. Map preserves insertion order, so
+ * deleting-then-re-setting a key moves it to the "most recently used" end;
+ * when the cache is full we evict from the other end (`.next().value`, the
+ * oldest key).
  */
 const initialContextCache = new Map<string, { value: string; at: number }>();
 const INITIAL_CONTEXT_TTL_MS = 10 * 60 * 1000;
+const INITIAL_CONTEXT_MAX_ENTRIES = 500;
 
 export async function initialContextFor(orgId: string): Promise<string> {
   const cached = initialContextCache.get(orgId);
-  if (cached && Date.now() - cached.at < INITIAL_CONTEXT_TTL_MS) {
-    return cached.value;
+  if (cached) {
+    if (Date.now() - cached.at < INITIAL_CONTEXT_TTL_MS) {
+      // Refresh recency without refreshing the value.
+      initialContextCache.delete(orgId);
+      initialContextCache.set(orgId, cached);
+      return cached.value;
+    }
+    initialContextCache.delete(orgId);
   }
   const [path, query] = orgScopedMcpUrl(orgId).split("?");
   const res = await fetch(`${path}/initial-context?${query}`, {
@@ -54,6 +68,10 @@ export async function initialContextFor(orgId: string): Promise<string> {
     throw new Error(`initial-context fetch failed: ${res.status}`);
   }
   const value = await res.text();
+  if (initialContextCache.size >= INITIAL_CONTEXT_MAX_ENTRIES) {
+    const oldestKey = initialContextCache.keys().next().value;
+    if (oldestKey !== undefined) initialContextCache.delete(oldestKey);
+  }
   initialContextCache.set(orgId, { value, at: Date.now() });
   return value;
 }

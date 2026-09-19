@@ -44,7 +44,9 @@ export async function POST(req: Request) {
   const closeMcp = async () => {
     if (closed) return;
     closed = true;
-    await mcpClient.close().catch(() => {});
+    await mcpClient.close().catch((e) => {
+      console.warn("[api/agent] mcpClient.close() failed", e);
+    });
   };
 
   try {
@@ -76,7 +78,11 @@ export async function POST(req: Request) {
           sanityInsightsIntegration({
             client: writeClient,
             agentId: "hirebase",
-            threadId: chatId ?? `org-${orgId}`,
+            // Falling back to a constant per-org id here would merge every
+            // conversation that arrives without a client-supplied chatId
+            // into one shared Insights thread. crypto.randomUUID() keeps
+            // untagged requests distinct instead of silently colliding.
+            threadId: chatId ?? crypto.randomUUID(),
           }),
         ],
       },
@@ -84,6 +90,7 @@ export async function POST(req: Request) {
     return result.toUIMessageStreamResponse();
   } catch (e) {
     await closeMcp();
-    throw e;
+    console.error("[api/agent] request failed", { orgId }, e);
+    return Response.json({ error: "agent_request_failed" }, { status: 500 });
   }
 }

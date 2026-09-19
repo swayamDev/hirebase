@@ -11,7 +11,7 @@ import {
   type QueueGroup,
   type QueueItem,
 } from "@/components/today/today-queue";
-import { AskChip } from "@/components/today/ask-hirebase";
+import { AskChip } from "@/components/today/ask-assistant";
 import { Button } from "@/components/ui/button";
 import { type Stage } from "@/sanity/schemas/stages";
 import { cn } from "@/lib/utils";

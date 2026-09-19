@@ -4,7 +4,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { requireOrg } from "@/lib/tenant";
 import { readClient } from "@/lib/sanity/client";
 import { CommandMenu, type CommandEntities } from "@/components/command-menu";
-import { AskHirebaseModal } from "@/components/agent/ask-hirebase-modal";
+import { AskHirebaseModal } from "@/components/agent/ask-assistant-modal";
 import { AppSidebar, type NeedsAWordClient } from "@/components/app-sidebar";
 import { AgentDock } from "@/components/agent/AgentDock";
 import {

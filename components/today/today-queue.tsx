@@ -6,7 +6,7 @@ import { Sparkles, X } from "lucide-react";
 import { STAGES, STAGE_LABELS, type Stage } from "@/sanity/schemas/stages";
 import { STAGE_BG, StagePill } from "@/components/stage-rail";
 import { InitialsChip } from "@/components/initials-chip";
-import { askHirebase } from "@/components/today/ask-hirebase";
+import { askHirebase } from "@/components/today/ask-assistant";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 

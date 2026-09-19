@@ -10,7 +10,7 @@
     "lint": "eslint",
     "seed": "node --experimental-strip-types scripts/seed.mts",
     "seed:reset": "node --experimental-strip-types scripts/seed.mts --reset",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.113",

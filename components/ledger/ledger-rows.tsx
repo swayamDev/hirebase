@@ -6,7 +6,7 @@ import { ChevronRight, Sparkles } from "lucide-react";
 import { type Stage } from "@/sanity/schemas/stages";
 import { StageMixBar } from "@/components/stage-mix-bar";
 import { InitialsChip } from "@/components/initials-chip";
-import { askHirebase } from "@/components/today/ask-hirebase";
+import { askHirebase } from "@/components/today/ask-assistant";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 

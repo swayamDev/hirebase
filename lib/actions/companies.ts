@@ -47,7 +47,8 @@ export async function updateCompany(
   const { orgId } = await requireOrg();
   try {
     await assertOwned(id, orgId);
-  } catch {
+  } catch (e) {
+    console.warn("[updateCompany] ownership check failed", { id, orgId }, e);
     return { error: "That company is not in this workspace." };
   }
 

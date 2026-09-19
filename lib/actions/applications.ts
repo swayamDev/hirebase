@@ -26,7 +26,8 @@ export async function moveApplication(
     const stageUpdatedAt = new Date().toISOString();
     await writeClient.patch(id).set({ stage, stageUpdatedAt }).commit();
     return { stage, stageUpdatedAt };
-  } catch {
+  } catch (e) {
+    console.error("[moveApplication]", { id, orgId, stage }, e);
     return { error: "Could not move the candidate. Try again." };
   }
 }
@@ -45,7 +46,8 @@ export async function createApplication(
       assertOwned(jobId, orgId),
       assertOwned(candidateId, orgId),
     ]);
-  } catch {
+  } catch (e) {
+    console.warn("[createApplication] ownership check failed", { jobId, candidateId, orgId }, e);
     return { error: "Candidate or job is not in this workspace." };
   }
 
@@ -100,7 +102,8 @@ export async function recordOffer(
 
   try {
     await assertOwned(applicationId, orgId);
-  } catch {
+  } catch (e) {
+    console.warn("[recordOffer] ownership check failed", { applicationId, orgId }, e);
     return { error: "That application is not in this workspace." };
   }
 

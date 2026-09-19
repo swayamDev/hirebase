@@ -34,7 +34,8 @@ export async function POST(req: NextRequest) {
   let evt: Awaited<ReturnType<typeof verifyWebhook>>;
   try {
     evt = await verifyWebhook(req);
-  } catch {
+  } catch (e) {
+    console.warn("[clerk-webhook] signature verification failed", e);
     return new Response("Verification failed", { status: 400 });
   }
 
@@ -64,7 +65,11 @@ export async function POST(req: NextRequest) {
         .patch(orgDocId(data.id))
         .set({ deletedAt: new Date().toISOString() })
         .commit()
-        .catch(() => {}); // org doc may never have been synced
+        .catch((e) => {
+          // Expected if the org doc was never synced; anything else (auth,
+          // network, schema) is worth knowing about, so log either way.
+          console.warn("[clerk-org-sync] delete-patch failed (may be unsynced org)", { orgId: data.id }, e);
+        });
       console.log("[clerk-org-sync]", { type, orgId: data.id });
     }
   } else if (

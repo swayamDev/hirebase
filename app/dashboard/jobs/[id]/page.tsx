@@ -163,7 +163,8 @@ export default async function JobPage({
           );
         }
       }
-    } catch {
+    } catch (e) {
+      console.warn("[jobs/[id]] match-score fetch failed, rendering without it", { jobId: id }, e);
       // Embeddings unavailable - cards simply render without a match figure.
     }
   }

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireOrg, assertOwned, orgRef } from "@/lib/tenant";
 import { writeClient } from "@/lib/sanity/client";
-import { FREE_JOB_LIMIT, countJobs } from "@/lib/plan-limits";
+import { FREE_JOB_LIMIT, countJobs, enforceCreateLimit } from "@/lib/plan-limits";
 
 const SENIORITIES = [
   "junior",
@@ -39,7 +39,8 @@ export async function createJob(formData: FormData): Promise<CreateJobResult> {
 
   try {
     await assertOwned(companyId, orgId);
-  } catch {
+  } catch (e) {
+    console.warn("[createJob] company ownership check failed", { companyId, orgId }, e);
     return { error: "That company is not in this workspace." };
   }
 
@@ -47,7 +48,7 @@ export async function createJob(formData: FormData): Promise<CreateJobResult> {
   const seniority = String(formData.get("seniority") ?? "");
   const salaryRange = String(formData.get("salaryRange") ?? "").trim();
 
-  await writeClient.create({
+  const doc = await writeClient.create({
     _type: "job",
     orgId,
     organization: orgRef(orgId),
@@ -61,6 +62,24 @@ export async function createJob(formData: FormData): Promise<CreateJobResult> {
       : {}),
     ...(salaryRange ? { salaryRange } : {}),
   });
+
+  // Authoritative check: closes the race the pre-check above can't. See
+  // enforceCreateLimit's doc comment.
+  if (!has({ feature: "unlimited_jobs" })) {
+    const kept = await enforceCreateLimit({
+      type: "job",
+      orgId,
+      limit: FREE_JOB_LIMIT,
+      newId: doc._id,
+    });
+    if (!kept) {
+      return {
+        error:
+          "Free plan includes 1 job - closing a job does not free the slot.",
+        upgrade: true,
+      };
+    }
+  }
 
   revalidatePath("/dashboard/jobs");
   return { ok: true };
@@ -91,7 +110,8 @@ export async function updateJob(
   const { orgId } = await requireOrg();
   try {
     await assertOwned(id, orgId);
-  } catch {
+  } catch (e) {
+    console.warn("[updateJob] job ownership check failed", { id, orgId }, e);
     return { error: "That job is not in this workspace." };
   }
 
@@ -102,7 +122,8 @@ export async function updateJob(
   if (companyId) {
     try {
       await assertOwned(companyId, orgId);
-    } catch {
+    } catch (e) {
+      console.warn("[updateJob] company ownership check failed", { companyId, orgId }, e);
       return { error: "That company is not in this workspace." };
     }
   }

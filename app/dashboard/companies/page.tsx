@@ -4,7 +4,7 @@ import { readClient } from "@/lib/sanity/client";
 import { type Stage } from "@/sanity/schemas/stages";
 import { FilterSelect } from "@/components/filter-chips";
 import { LedgerRows, type LedgerRow } from "@/components/ledger/ledger-rows";
-import { AskButton } from "@/components/today/ask-hirebase";
+import { AskButton } from "@/components/today/ask-assistant";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
