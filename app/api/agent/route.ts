@@ -12,6 +12,12 @@ import { initialContextFor, orgScopedMcpUrl } from "@/lib/mcp";
 import { buildSystemPrompt } from "@/lib/agent-prompt";
 import { buildActionTools, buildClientTools } from "@/lib/agent-tools";
 import { writeClient } from "@/lib/sanity/client";
+import { checkAgentRateLimit } from "@/lib/agent-rate-limit";
+
+// Lets a cost-sensitive deployment (e.g. a public portfolio demo) run the
+// agent on a cheaper model tier without touching code - unset, this keeps
+// using the same model everywhere.
+const AGENT_MODEL = process.env.ANTHROPIC_AGENT_MODEL ?? "claude-sonnet-5";
 
 export async function POST(req: Request) {
   const { userId, orgId, has } = await auth();
@@ -23,6 +29,17 @@ export async function POST(req: Request) {
   }
   if (!has({ feature: "ai_agent" })) {
     return Response.json({ error: "upgrade_required" }, { status: 403 });
+  }
+
+  const rateLimit = await checkAgentRateLimit(orgId);
+  if (!rateLimit.allowed) {
+    return Response.json(
+      {
+        error: "rate_limited",
+        message: `This workspace has reached its ${rateLimit.limit}-message daily limit for the AI agent. Try again tomorrow.`,
+      },
+      { status: 429 },
+    );
   }
 
   const { messages, id: chatId }: { messages: UIMessage[]; id?: string } =
@@ -63,7 +80,7 @@ export async function POST(req: Request) {
       ...buildClientTools(),
     };
     const result = streamText({
-      model: anthropic("claude-sonnet-5"),
+      model: anthropic(AGENT_MODEL),
       system: buildSystemPrompt(await initialContextFor(orgId)),
       messages: await convertToModelMessages(messages),
       tools,

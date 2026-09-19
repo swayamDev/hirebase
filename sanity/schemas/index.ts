@@ -4,6 +4,7 @@ import { job } from "./job";
 import { candidate } from "./candidate";
 import { application } from "./application";
 import { interview } from "./interview";
+import { agentUsage } from "./agent-usage";
 
 export const schemaTypes = [
   organization,
@@ -12,4 +13,5 @@ export const schemaTypes = [
   candidate,
   application,
   interview,
+  agentUsage,
 ];

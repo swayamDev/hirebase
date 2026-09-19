@@ -9,17 +9,21 @@ import { vi } from "vitest";
  */
 export function createMockSanityClient() {
   const commit = vi.fn().mockResolvedValue({});
-  const set = vi.fn(() => ({ commit }));
-  const patch = vi.fn((_id: string) => ({ set, commit }));
+  const set = vi.fn(() => chainObj);
+  const setIfMissing = vi.fn(() => chainObj);
+  const inc = vi.fn(() => chainObj);
+  const chainObj = { set, setIfMissing, inc, commit };
+  const patch = vi.fn((_id: string) => chainObj);
 
   const client = {
     fetch: vi.fn(),
     create: vi.fn(),
     createOrReplace: vi.fn(),
+    createIfNotExists: vi.fn(),
     patch,
     delete: vi.fn().mockResolvedValue({}),
     // exposed so tests can reach the chained fns directly if needed
-    __chain: { commit, set, patch },
+    __chain: { commit, set, setIfMissing, inc, patch },
   };
   return client;
 }
