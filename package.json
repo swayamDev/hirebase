@@ -2,7 +2,7 @@
   "name": "hirebase",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "pnpm@11.22.0",
+  "packageManager": "pnpm@12.4.1",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -10,7 +10,11 @@
     "lint": "eslint",
     "seed": "node --experimental-strip-types scripts/seed.mts",
     "seed:reset": "node --experimental-strip-types scripts/seed.mts --reset",
-    "typecheck": "next typegen && tsc --noEmit"
+    "typecheck": "next typegen && tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.113",
@@ -45,14 +49,24 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@clerk/testing": "^2.2.34",
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.1.1",
+    "@vitest/coverage-v8": "^5.0.0",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.3.3",
+    "jsdom": "^30.0.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^5.0.0"
   }
 }
