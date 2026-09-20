@@ -13,4 +13,7 @@ export default defineCliConfig({
     dataset: process.env.NEXT_PUBLIC_SANITY_DATASET ?? "production",
   },
   studioHost: "hirebase-crm",
+  deployment: {
+    appId: "kwd2tyigy09ua3cmns77hyn0",
+  },
 });
