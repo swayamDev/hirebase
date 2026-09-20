@@ -48,7 +48,7 @@
     "react-dom": "19.2.8",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1",
-    "sanity": "^6.11.0",
+    "sanity": "^6.15.0",
     "server-only": "^0.0.1",
     "styled-components": "^6.5.3",
     "tailwind-merge": "^3.6.0",
