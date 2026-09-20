@@ -95,7 +95,7 @@ export function AppSidebar({
               Hirebase<span className="text-ai">.</span>
             </span>
             <span className="hidden group-data-[collapsible=icon]:inline">
-              V<span className="text-ai">.</span>
+              H<span className="text-ai">.</span>
             </span>
           </Link>
           <SidebarTrigger className="text-muted-foreground hidden md:flex" />
@@ -121,7 +121,10 @@ export function AppSidebar({
               {NAV.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
-                    isActive={isActive(item.href, "exact" in item && item.exact)}
+                    isActive={isActive(
+                      item.href,
+                      "exact" in item && item.exact,
+                    )}
                     render={<Link href={item.href} />}
                     tooltip={item.label}
                     className="h-[30px] text-[13px]"
@@ -150,7 +153,9 @@ export function AppSidebar({
                 {needsAWord.map((client) => (
                   <SidebarMenuItem key={client.id}>
                     <SidebarMenuButton
-                      render={<Link href={`/dashboard/companies/${client.id}`} />}
+                      render={
+                        <Link href={`/dashboard/companies/${client.id}`} />
+                      }
                       className="h-[27px] text-[12.5px]"
                     >
                       <span
