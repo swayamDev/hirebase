@@ -45,6 +45,7 @@ function tickLabel(time: number) {
  * and gridlines are percentage-positioned along a shared date axis.
  */
 export function JobsGantt({ jobs }: { jobs: GanttJob[] }) {
+  // eslint-disable-next-line react-hooks/purity -- Server Component; runs once per request, not memoized by the compiler
   const now = Date.now();
 
   const rows = jobs

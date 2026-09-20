@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { CornerDownLeft, Sparkles } from "lucide-react";
 import { suggestionsFor } from "@/components/agent/AgentPanel";
 import { askHirebase } from "@/components/today/ask-assistant";
+import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 import {
   Dialog,
   DialogContent,
@@ -25,13 +26,12 @@ const DEMO_PROMPTS = [
 /** Landing-hero-style typewriter, driven as a placeholder string. */
 function useTypewriter(active: boolean) {
   const [text, setText] = React.useState("");
+  const reduced = usePrefersReducedMotion();
 
   React.useEffect(() => {
-    if (!active) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setText(DEMO_PROMPTS[0]);
-      return;
-    }
+    // Static text for the reduced-motion case is handled by the derived
+    // return value below - just skip the animation loop here.
+    if (!active || reduced) return;
     let prompt = 0;
     let char = 0;
     let timer: ReturnType<typeof setTimeout>;
@@ -52,9 +52,9 @@ function useTypewriter(active: boolean) {
     };
     tick();
     return () => clearTimeout(timer);
-  }, [active]);
+  }, [active, reduced]);
 
-  return text;
+  return active && reduced ? DEMO_PROMPTS[0] : text;
 }
 
 /**

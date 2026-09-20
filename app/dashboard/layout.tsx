@@ -65,6 +65,7 @@ export default async function DashboardLayout({
     const days = Math.max(
       0,
       Math.floor(
+        // eslint-disable-next-line react-hooks/purity -- Server Component; runs once per request, not memoized by the compiler
         (Date.now() - new Date(touch.stageUpdatedAt).getTime()) / 86_400_000,
       ),
     );

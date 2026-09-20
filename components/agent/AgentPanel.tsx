@@ -461,6 +461,7 @@ function AgentChat({
   const [entityName, setEntityName] = useState<string | null>(null);
   useEffect(() => {
     if (!screenKind(pathname)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- resets only on actual route change (pathname dependency), not a per-render cascade
       setEntityName(null);
       return;
     }

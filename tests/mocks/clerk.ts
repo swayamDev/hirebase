@@ -1,5 +1,3 @@
-import { vi } from "vitest";
-
 export type MockAuthState = {
   userId: string | null;
   orgId: string | null;

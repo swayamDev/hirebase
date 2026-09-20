@@ -23,7 +23,7 @@ export default function Error({
         Something went wrong
       </h1>
       <p className="max-w-sm text-sm text-muted-foreground">
-        That didn't work. Try again, and if it keeps happening, refresh the
+        That didn&apos;t work. Try again, and if it keeps happening, refresh the
         page.
       </p>
       <Button onClick={() => reset()}>Try again</Button>

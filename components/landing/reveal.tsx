@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 
 /**
  * Scroll-triggered reveal: children fade/rise in when they enter the
@@ -17,27 +18,25 @@ export function Reveal({
   children: React.ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const [shown, setShown] = useState(false);
+  const [intersected, setIntersected] = useState(false);
+  const reducedMotion = usePrefersReducedMotion();
+  const shown = reducedMotion || intersected;
 
   useEffect(() => {
+    if (reducedMotion) return;
     const node = ref.current;
-    if (!node) return;
-    if (
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
-      typeof IntersectionObserver === "undefined"
-    ) {
-      setShown(true);
-      return;
-    }
-    // already on screen (initial viewport, anchor jump) - reveal right away
+    if (!node || typeof IntersectionObserver === "undefined") return;
+    // One-time mount check (not a per-render cascade): reveal immediately
+    // if already scrolled into view (initial viewport, anchor jump),
+    // otherwise wait for the observer callback to fire.
     if (node.getBoundingClientRect().top < window.innerHeight) {
-      setShown(true);
+      setIntersected(true);
       return;
     }
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting) {
-          setShown(true);
+          setIntersected(true);
           observer.disconnect();
         }
       },
@@ -45,7 +44,7 @@ export function Reveal({
     );
     observer.observe(node);
     return () => observer.disconnect();
-  }, []);
+  }, [reducedMotion]);
 
   return (
     <div

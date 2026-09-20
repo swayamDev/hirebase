@@ -11,7 +11,7 @@ export default function NotFound() {
         Page not found
       </h1>
       <p className="max-w-sm text-sm text-muted-foreground">
-        The page you're looking for doesn't exist, or you don't have access
+        The page you&apos;re looking for doesn&apos;t exist, or you don&apos;t have access
         to it.
       </p>
       <Button render={<Link href="/dashboard" />}>Back to dashboard</Button>

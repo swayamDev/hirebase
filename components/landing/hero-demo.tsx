@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 
 type Candidate = { name: string; note: string; pct: number };
 type Scene = { question: string; candidates: Candidate[] };
@@ -52,17 +53,14 @@ export function HeroDemo() {
   const [sceneIndex, setSceneIndex] = useState(0);
   const [typed, setTyped] = useState("");
   const [showResults, setShowResults] = useState(false);
-  const [reduced, setReduced] = useState(false);
+  const reduced = usePrefersReducedMotion();
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (mq.matches) {
-      setReduced(true);
-      setTyped(SCENES[0].question);
-      setShowResults(true);
-      return;
-    }
+    // Static display for the reduced-motion case is handled entirely by
+    // the derived `displayTyped`/`displayShowResults` values below - no
+    // need to synchronously set state here, just skip the animation loop.
+    if (reduced) return;
 
     let cancelled = false;
     const schedule = (fn: () => void, ms: number) => {
@@ -106,9 +104,11 @@ export function HeroDemo() {
       cancelled = true;
       current.forEach(clearTimeout);
     };
-  }, []);
+  }, [reduced]);
 
   const scene = SCENES[sceneIndex];
+  const displayTyped = reduced ? SCENES[0].question : typed;
+  const displayShowResults = reduced || showResults;
 
   return (
     <div className="relative w-full max-w-2xl">
@@ -125,7 +125,7 @@ export function HeroDemo() {
             <Sparkles className="size-4 text-white" />
           </span>
           <p className="min-h-6 flex-1 text-left text-[15px] font-medium text-black/80">
-            {typed}
+            {displayTyped}
             {!reduced && (
               <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-[#EE5A0E] align-middle" />
             )}
@@ -138,11 +138,11 @@ export function HeroDemo() {
             <div
               key={`${sceneIndex}-${candidate.name}`}
               style={{
-                transitionDelay: showResults ? `${i * CARD_STAGGER_MS}ms` : "0ms",
+                transitionDelay: displayShowResults ? `${i * CARD_STAGGER_MS}ms` : "0ms",
               }}
               className={cn(
                 "flex items-center gap-4 rounded-xl border p-3.5 transition-all duration-500",
-                showResults
+                displayShowResults
                   ? "translate-y-0 opacity-100"
                   : "translate-y-3 opacity-0",
                 i === 0
@@ -186,7 +186,7 @@ export function HeroDemo() {
                 <div className="mt-1 h-1 w-14 overflow-hidden rounded-full bg-black/[0.08]">
                   <span
                     className="block h-full rounded-full bg-[#EE5A0E] transition-all duration-700"
-                    style={{ width: showResults ? `${candidate.pct}%` : "0%" }}
+                    style={{ width: displayShowResults ? `${candidate.pct}%` : "0%" }}
                   />
                 </div>
               </div>

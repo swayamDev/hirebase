@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 
 /**
  * Explains the pipeline in one loop: a candidate card slides Screening →
@@ -22,22 +23,17 @@ const COL_WIDTH = "calc((100% - 1.5rem) / 3)";
 
 export function PipelineFlow() {
   const [tick, setTick] = useState(0);
-  const [reduced, setReduced] = useState(false);
+  const reduced = usePrefersReducedMotion();
 
   useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (mq.matches) {
-      setReduced(true);
-      setTick(1);
-      return;
-    }
+    if (reduced) return;
     const t = setInterval(() => setTick((p) => p + 1), PHASE_MS);
     return () => clearInterval(t);
-  }, []);
+  }, [reduced]);
 
   // phases 0–2 slide the card across the columns; phase 3 fades it out,
   // then the next cycle remounts it back in Screening.
-  const phase = tick % 4;
+  const phase = reduced ? 1 : tick % 4;
   const cycle = Math.floor(tick / 4);
   const movingCol = phase === 3 ? 2 : phase;
   const staleVisible = phase >= 2 || reduced;
